@@ -158,7 +158,7 @@ function Checkout({ event, quantity }) {
             <Button size="lg" className="w-full" onClick={pay} disabled={paying}>
               {paying ? 'Confirming…' : free ? 'Confirm free booking' : `Pay ${formatPrice(total)}`}
             </Button>
-            <Link to={`/events/${event.id}`} className="block text-center text-sm text-slate-500 hover:underline">Change tickets</Link>
+            <Link to={`/events/${event.id}`} className="block py-1 text-center text-sm text-slate-500 hover:underline">Change tickets</Link>
           </div>
         </Card>
       </aside>

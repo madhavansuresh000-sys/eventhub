@@ -35,7 +35,7 @@ export default function CertificatesPage() {
                 <p className="mt-2 font-mono text-xs text-slate-500">{t.certificateId}</p>
                 <div className="mt-4 flex gap-2">
                   <Button to={`/certificates/${t.certificateId}`} size="sm">View and download</Button>
-                  <Link to={`/tickets/${t.id}`} className="self-center text-sm text-brand-600 hover:underline dark:text-brand-400">Ticket</Link>
+                  <Link to={`/tickets/${t.id}`} className="self-center py-1 text-sm text-brand-600 hover:underline dark:text-brand-400">Ticket</Link>
                 </div>
               </div>
             </Card>

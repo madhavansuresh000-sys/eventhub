@@ -103,7 +103,7 @@ export default function EventDetailsPage() {
 
   return (
     <div>
-      <Link to="/events" className="mb-6 inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white">
+      <Link to="/events" className="mb-6 inline-flex items-center gap-2 py-1 text-sm font-medium text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white">
         <ArrowLeftIcon className="h-4 w-4" /> All events
       </Link>
 
@@ -111,7 +111,7 @@ export default function EventDetailsPage() {
         <article className="lg:col-span-2">
           <EventPoster clubSlug={event.club.slug} tags={event.tags} className="h-56 rounded-2xl sm:h-72" emojiSize="text-7xl" />
 
-          <Link to={`/clubs/${event.club.slug}`} className="mt-6 inline-block text-sm font-semibold uppercase tracking-wide text-brand-600 hover:underline dark:text-brand-400">
+          <Link to={`/clubs/${event.club.slug}`} className="mt-6 inline-block py-1 text-sm font-semibold uppercase tracking-wide text-brand-600 hover:underline dark:text-brand-400">
             {event.club.name}
           </Link>
           <h1 className="mt-1 text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl dark:text-white">{event.title}</h1>

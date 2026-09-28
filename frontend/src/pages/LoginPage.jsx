@@ -52,7 +52,7 @@ export default function LoginPage() {
                 checked={values.remember} onChange={field('remember').onChange} />
               Remember me
             </label>
-            <Link to="/forgot-password" className="font-medium text-brand-600 hover:underline dark:text-brand-400">
+            <Link to="/forgot-password" className="py-1 font-medium text-brand-600 hover:underline dark:text-brand-400">
               Forgot password?
             </Link>
           </div>

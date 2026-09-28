@@ -27,7 +27,7 @@ export default function TicketPage() {
 
   return (
     <div className="mx-auto max-w-3xl">
-      <Link to="/my-tickets" className="mb-6 inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-slate-900 print:hidden dark:text-slate-400 dark:hover:text-white">
+      <Link to="/my-tickets" className="mb-6 inline-flex items-center gap-2 py-1 text-sm font-medium text-slate-600 hover:text-slate-900 print:hidden dark:text-slate-400 dark:hover:text-white">
         <ArrowLeftIcon className="h-4 w-4" /> My tickets
       </Link>
 

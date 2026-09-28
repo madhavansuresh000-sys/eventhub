@@ -91,7 +91,8 @@ export default function VolunteersPage() {
         <EmptyState title="No volunteers yet" message="Add students who will help at the gate." />
       ) : (
         <Card className="overflow-hidden">
-          <div className="overflow-x-auto">
+          {/* relative: keeps the hidden "Actions" label inside this scroll box (it widened the page on phones) */}
+          <div className="relative overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500 dark:bg-slate-800/60">
                 <tr>

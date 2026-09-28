@@ -17,7 +17,7 @@ function SectionHeader({ title, subtitle, to }) {
         {subtitle && <p className="mt-1 text-slate-600 dark:text-slate-400">{subtitle}</p>}
       </div>
       {to && (
-        <Link to={to} className="shrink-0 text-sm font-semibold text-brand-600 hover:underline dark:text-brand-400">
+        <Link to={to} className="shrink-0 py-1 text-sm font-semibold text-brand-600 hover:underline dark:text-brand-400">
           See all →
         </Link>
       )}
