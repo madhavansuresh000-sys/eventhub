@@ -1,0 +1,33 @@
+# EventHub local services — start with:  docker compose up -d
+# Passwords come from the .env file (never pushed to GitHub). See .env.example.
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: eventhub-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: eventhub
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      TZ: Asia/Kolkata
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql   # keeps your data when the container stops
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: eventhub-mailpit
+    restart: unless-stopped
+    ports:
+      - "1025:1025"   # SMTP: Spring Boot sends emails here
+      - "8025:8025"   # Web inbox: open http://localhost:8025
+
+volumes:
+  mysql-data:
