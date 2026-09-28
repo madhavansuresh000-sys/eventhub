@@ -43,5 +43,11 @@ export default function useForm(initialValues, rules, onValidSubmit) {
     }
   }
 
-  return { values, errors, field, handleSubmit, submitting }
+  /** For inputs that are not a plain <input>, e.g. a list of tag chips. */
+  const setValue = (name, value) => {
+    setValues((v) => ({ ...v, [name]: value }))
+    setTouched((t) => ({ ...t, [name]: true }))
+  }
+
+  return { values, errors, field, setValue, handleSubmit, submitting }
 }

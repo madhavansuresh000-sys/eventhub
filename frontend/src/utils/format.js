@@ -26,11 +26,13 @@ export function formatTimeRange(startIso, endIso) {
   return `${shortDay.format(start)}, ${timeFormat.format(start)} to ${shortDay.format(end)}, ${timeFormat.format(end)}`
 }
 
-/** 0 -> "Free", 100 -> "₹100", 99.5 -> "₹99.50" */
+const rupees = new Intl.NumberFormat('en-IN', { maximumFractionDigits: 2 })
+
+/** 0 -> "Free", 100 -> "₹100", 32500 -> "₹32,500", 125000 -> "₹1,25,000" (Indian grouping) */
 export function formatPrice(price) {
   const n = Number(price)
   if (n === 0) return 'Free'
-  return `₹${Number.isInteger(n) ? n : n.toFixed(2)}`
+  return `₹${rupees.format(n)}`
 }
 
 /** Colour and text for the seats badge. */

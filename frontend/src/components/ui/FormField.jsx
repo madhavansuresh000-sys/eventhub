@@ -44,6 +44,17 @@ export function PasswordField({ label, hint, error, id, className = '', children
   )
 }
 
+export function TextAreaField({ label, hint, error, id, className = '', rows = 4, ...props }) {
+  const describedBy = error ? `${id}-error` : hint ? `${id}-hint` : undefined
+  return (
+    <div className={className}>
+      <label htmlFor={id} className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">{label}</label>
+      <textarea id={id} rows={rows} className={inputClass(error)} aria-invalid={Boolean(error)} aria-describedby={describedBy} {...props} />
+      <FieldMessage id={id} error={error} hint={hint} />
+    </div>
+  )
+}
+
 export function SelectField({ label, error, id, options, placeholder, className = '', ...selectProps }) {
   return (
     <div className={className}>

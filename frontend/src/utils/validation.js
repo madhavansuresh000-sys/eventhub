@@ -10,6 +10,19 @@ export const email = (v) => (!v || EMAIL.test(v.trim()) ? '' : 'Enter a valid em
 
 export const minLength = (n, label) => (v) => (!v || v.length >= n ? '' : `${label} must be at least ${n} characters`)
 
+export const maxLength = (n, label) => (v) => (!v || v.length <= n ? '' : `${label} must be at most ${n} characters`)
+
+/** Whole number between min and max, e.g. seats. Empty is left to required(). */
+export const wholeNumberBetween = (min, max, label) => (v) => {
+  if (v === '' || v === null || v === undefined) return ''
+  const n = Number(v)
+  if (!Number.isInteger(n)) return `${label} must be a whole number`
+  if (n < min || n > max) return `${label} must be between ${min} and ${max}`
+  return ''
+}
+
+export const notNegative = (label) => (v) => (v === '' || Number(v) >= 0 ? '' : `${label} cannot be negative`)
+
 export const strongPassword = (v) => {
   if (!v) return ''
   if (v.length < 8) return 'Use at least 8 characters'
