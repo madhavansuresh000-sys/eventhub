@@ -1,64 +1,45 @@
-import { useEffect, useState } from 'react'
-import { Link, Route, Routes } from 'react-router-dom'
-import api from './api/client'
+import { Route, Routes } from 'react-router-dom'
 
-function BackendStatus() {
-  const [status, setStatus] = useState('checking')
+import Layout from './components/layout/Layout'
+import AboutPage from './pages/AboutPage'
+import ComingSoonPage from './pages/ComingSoonPage'
+import HomePage from './pages/HomePage'
+import NotFoundPage from './pages/NotFoundPage'
+import StyleGuidePage from './pages/StyleGuidePage'
 
-  useEffect(() => {
-    api
-      .get('/health')
-      .then((res) => setStatus(res.data.status))
-      .catch(() => setStatus('DOWN'))
-  }, [])
-
-  const colors = {
-    UP: 'bg-green-100 text-green-800',
-    DOWN: 'bg-red-100 text-red-800',
-    checking: 'bg-yellow-100 text-yellow-800',
-  }
-
-  return (
-    <p className={`mt-6 rounded-lg px-4 py-2 ${colors[status] ?? colors.DOWN}`}>
-      Backend: {status}
-    </p>
-  )
-}
-
-function Home() {
-  return (
-    <div className="rounded-2xl bg-white p-8 shadow">
-      <h1 className="text-3xl font-bold text-indigo-600">EventHub</h1>
-      <p className="mt-2 text-gray-600">Find and book college events.</p>
-      <BackendStatus />
-    </div>
-  )
-}
-
-function About() {
-  return (
-    <div className="rounded-2xl bg-white p-8 shadow">
-      <h1 className="text-2xl font-bold">About</h1>
-      <p className="mt-2 text-gray-600">
-        A practice project: React + Spring Boot + MySQL.
-      </p>
-    </div>
-  )
-}
+/** Pages still to build, with the Phase 3 step that builds them. */
+const upcoming = [
+  { path: '/events', title: 'All events', step: 4, description: 'Filter sidebar, search and pages.' },
+  { path: '/events/:id', title: 'Event details', step: 4, description: 'Poster, details and the Book Now box.' },
+  { path: '/clubs/:slug', title: 'Club page', step: 4, description: "A club's story and its events." },
+  { path: '/login', title: 'Login', step: 5, description: 'Email and password with form checks.' },
+  { path: '/register', title: 'Register', step: 5, description: 'Create a student account.' },
+  { path: '/checkout/:eventId', title: 'Checkout', step: 6, description: 'Your seat is held for 10 minutes.' },
+  { path: '/my-tickets', title: 'My tickets', step: 6, description: 'Confirmed, waitlisted and attended events.' },
+  { path: '/tickets/:id', title: 'Ticket', step: 6, description: 'Your QR code for the gate.' },
+  { path: '/waitlist', title: 'My waitlist', step: 6, description: 'Where you are in the queue.' },
+  { path: '/certificates', title: 'Certificates', step: 6, description: 'Download certificates for events you attended.' },
+  { path: '/organizer', title: 'My club', step: 7, description: 'Organizer dashboard.' },
+  { path: '/organizer/events/new', title: 'Create event', step: 7, description: 'The event form.' },
+  { path: '/organizer/events/:id/edit', title: 'Edit event', step: 7, description: 'Change an event.' },
+  { path: '/organizer/volunteers', title: 'Volunteers', step: 7, description: 'Who helps at the gate.' },
+  { path: '/scanner', title: 'Gate scanner', step: 8, description: 'Scan QR tickets: green = in, red = stop.' },
+  { path: '/admin', title: 'Admin overview', step: 9, description: 'Numbers across all clubs.' },
+  { path: '/admin/approvals', title: 'Approval queue', step: 9, description: 'Approve or send back events.' },
+]
 
 export default function App() {
   return (
-    <div className="min-h-screen bg-gray-100">
-      <nav className="flex gap-6 bg-indigo-600 px-6 py-4 text-white">
-        <Link to="/" className="font-semibold">Home</Link>
-        <Link to="/about">About</Link>
-      </nav>
-      <main className="mx-auto max-w-2xl p-6">
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/about" element={<About />} />
-        </Routes>
-      </main>
-    </div>
+    <Routes>
+      <Route element={<Layout />}>
+        <Route index element={<HomePage />} />
+        <Route path="about" element={<AboutPage />} />
+        <Route path="style-guide" element={<StyleGuidePage />} />
+        {upcoming.map((p) => (
+          <Route key={p.path} path={p.path} element={<ComingSoonPage {...p} />} />
+        ))}
+        <Route path="*" element={<NotFoundPage />} />
+      </Route>
+    </Routes>
   )
 }
