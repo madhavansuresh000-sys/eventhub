@@ -14,6 +14,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.eventhub.audit.AuditAction;
+import com.eventhub.audit.AuditService;
 import com.eventhub.club.Club;
 import com.eventhub.club.ClubRepository;
 import com.eventhub.common.BadRequestException;
@@ -44,6 +46,8 @@ public class EventService {
 	private final ClubRepository clubs;
 
 	private final TagRepository tags;
+
+	private final AuditService audit;
 
 	/** Sort options the API accepts, mapped to entity fields. */
 	private static final Map<String, String> SORT_FIELDS = Map.of(
@@ -130,7 +134,9 @@ public class EventService {
 		event.setAvailableSeats(request.totalSeats());
 		applyRequest(event, request);
 
-		return EventMapper.toDetail(events.save(event));
+		Event saved = events.save(event);
+		audit.record(AuditAction.CREATE, saved, null);
+		return EventMapper.toDetail(saved);
 	}
 
 	/**
@@ -154,6 +160,7 @@ public class EventService {
 		event.setAvailableSeats(request.totalSeats() - booked);
 		applyRequest(event, request);
 
+		audit.record(AuditAction.UPDATE, event, null);
 		return EventMapper.toDetail(event);
 	}
 
@@ -168,6 +175,7 @@ public class EventService {
 		}
 		moveTo(event, EventStatus.PENDING_APPROVAL, "submit");
 		event.setReviewNote(null);
+		audit.record(AuditAction.SUBMIT, event, null);
 		return EventMapper.toDetail(event);
 	}
 
@@ -177,6 +185,7 @@ public class EventService {
 		Event event = findEvent(id);
 		moveTo(event, EventStatus.PUBLISHED, "approve");
 		event.setReviewNote(null);
+		audit.record(AuditAction.APPROVE, event, null);
 		return EventMapper.toDetail(event);
 	}
 
@@ -189,6 +198,7 @@ public class EventService {
 		Event event = findEvent(id);
 		moveTo(event, EventStatus.DRAFT, "reject");
 		event.setReviewNote(reason.trim());
+		audit.record(AuditAction.REJECT, event, reason.trim());
 		return EventMapper.toDetail(event);
 	}
 

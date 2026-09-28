@@ -3,9 +3,13 @@ package com.eventhub.event;
 import java.util.List;
 
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.eventhub.audit.AuditResponse;
+import com.eventhub.audit.AuditService;
+import com.eventhub.common.PageResponse;
 import com.eventhub.event.dto.ClubStatsResponse;
 import com.eventhub.event.dto.EventDetailResponse;
 
@@ -22,6 +26,8 @@ public class AdminEventController {
 
 	private final EventService service;
 
+	private final AuditService audit;
+
 	/** The approval queue: events waiting for approval, soonest first. */
 	@GetMapping("/events/pending")
 	public List<EventDetailResponse> pendingEvents() {
@@ -32,6 +38,13 @@ public class AdminEventController {
 	@GetMapping("/stats/clubs")
 	public List<ClubStatsResponse> clubStats() {
 		return service.clubStats();
+	}
+
+	/** The audit log, newest first: who created, edited, submitted, approved or rejected which event. */
+	@GetMapping("/audit")
+	public PageResponse<AuditResponse> audit(@RequestParam(defaultValue = "0") int page,
+			@RequestParam(defaultValue = "20") int size) {
+		return audit.latest(page, size);
 	}
 
 }
