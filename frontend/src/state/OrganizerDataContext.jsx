@@ -71,6 +71,21 @@ export function OrganizerDataProvider({ children }) {
         dispatch({ type: 'eventSaved', event: { ...event, status: 'PENDING_APPROVAL', reviewNote: null } })
       },
 
+      /** Admin: PENDING_APPROVAL -> PUBLISHED, note cleared. Mirrors EventService.approve. */
+      approveEvent: (id) => {
+        const event = findEvent(id)
+        if (event.status !== 'PENDING_APPROVAL') throw new Error(`Only events waiting for approval can be approved (this one is ${event.status}).`)
+        dispatch({ type: 'eventSaved', event: { ...event, status: 'PUBLISHED', reviewNote: null } })
+      },
+
+      /** Admin: PENDING_APPROVAL -> DRAFT with a reason. Mirrors EventService.reject. */
+      rejectEvent: (id, reason) => {
+        const event = findEvent(id)
+        if (!reason?.trim()) throw new Error('A reason is required to send an event back.')
+        if (event.status !== 'PENDING_APPROVAL') throw new Error(`Only events waiting for approval can be sent back (this one is ${event.status}).`)
+        dispatch({ type: 'eventSaved', event: { ...event, status: 'DRAFT', reviewNote: reason.trim() } })
+      },
+
       addVolunteer: (volunteer) => {
         const id = Math.max(0, ...state.volunteers.map((v) => v.id)) + 1
         dispatch({ type: 'volunteerAdded', volunteer: { ...volunteer, id, eventId: Number(volunteer.eventId) } })

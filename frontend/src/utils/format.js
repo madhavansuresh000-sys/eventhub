@@ -42,6 +42,16 @@ export function seatsInfo(available, total) {
   return { color: 'green', text: `${available} seats left` }
 }
 
+/** Money totals: always rupees, even when zero. 0 -> "₹0", 32500 -> "₹32,500" */
+export const formatMoney = (amount) => `₹${rupees.format(Number(amount))}`
+
+/** Whole days from today until the date: 0 = today, 1 = tomorrow, negative = already past. */
+export function daysUntil(iso) {
+  const start = new Date(new Date().toDateString())
+  const day = new Date(toDate(iso).toDateString())
+  return Math.round((day - start) / 86_400_000)
+}
+
 /** One emoji per tag, used on the poster placeholder. */
 const tagEmoji = {
   tech: '💻', coding: '👩‍💻', workshop: '🛠️', music: '🎵', dance: '💃', sports: '🏏',

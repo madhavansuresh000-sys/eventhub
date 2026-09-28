@@ -1,7 +1,10 @@
 import { Route, Routes } from 'react-router-dom'
 
+import AdminLayout from './components/admin/AdminLayout'
 import Layout from './components/layout/Layout'
 import OrganizerLayout from './components/organizer/OrganizerLayout'
+import AdminOverviewPage from './pages/admin/AdminOverviewPage'
+import ApprovalQueuePage from './pages/admin/ApprovalQueuePage'
 import EventFormPage from './pages/organizer/EventFormPage'
 import OrganizerDashboardPage from './pages/organizer/OrganizerDashboardPage'
 import VolunteersPage from './pages/organizer/VolunteersPage'
@@ -23,12 +26,6 @@ import TicketPage from './pages/TicketPage'
 import WaitlistPage from './pages/WaitlistPage'
 import StyleGuidePage from './pages/StyleGuidePage'
 
-/** Pages still to build, with the Phase 3 step that builds them. */
-const upcoming = [
-  { path: '/admin', title: 'Admin overview', step: 9, description: 'Numbers across all clubs.' },
-  { path: '/admin/approvals', title: 'Approval queue', step: 9, description: 'Approve or send back events.' },
-]
-
 export default function App() {
   return (
     <Routes>
@@ -49,6 +46,10 @@ export default function App() {
           <Route path="events/:id/edit" element={<EventFormPage />} />
           <Route path="volunteers" element={<VolunteersPage />} />
         </Route>
+        <Route path="admin" element={<AdminLayout />}>
+          <Route index element={<AdminOverviewPage />} />
+          <Route path="approvals" element={<ApprovalQueuePage />} />
+        </Route>
         <Route path="scanner" element={<ScannerPage />} />
         <Route path="login" element={<LoginPage />} />
         <Route path="register" element={<RegisterPage />} />
@@ -58,9 +59,6 @@ export default function App() {
         />
         <Route path="about" element={<AboutPage />} />
         <Route path="style-guide" element={<StyleGuidePage />} />
-        {upcoming.map((p) => (
-          <Route key={p.path} path={p.path} element={<ComingSoonPage {...p} />} />
-        ))}
         <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>

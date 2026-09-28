@@ -7,18 +7,9 @@ import Button from '../../components/ui/Button'
 import Card from '../../components/ui/Card'
 import EmptyState from '../../components/ui/EmptyState'
 import Modal from '../../components/ui/Modal'
+import StatCard from '../../components/ui/StatCard'
 import { useOrganizerData } from '../../state/OrganizerDataContext'
-import { formatPrice, formatShortDate } from '../../utils/format'
-
-function Stat({ label, value, hint }) {
-  return (
-    <Card className="p-5">
-      <p className="text-sm text-slate-500">{label}</p>
-      <p className="mt-1 text-3xl font-extrabold text-slate-900 dark:text-white">{value}</p>
-      {hint && <p className="mt-1 text-xs text-slate-500">{hint}</p>}
-    </Card>
-  )
-}
+import { formatMoney, formatShortDate } from '../../utils/format'
 
 function EventRow({ event, onSubmit }) {
   const booked = event.totalSeats - event.availableSeats
@@ -85,10 +76,10 @@ export default function OrganizerDashboardPage() {
       {message && <Notice tone="success">{message}</Notice>}
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <Stat label="Published events" value={published.length} />
-        <Stat label="Tickets sold" value={sold} hint="Across published events" />
-        <Stat label="Money collected" value={formatPrice(revenue)} hint="Tickets × price" />
-        <Stat label="Waiting for approval" value={pending} />
+        <StatCard label="Published events" value={published.length} />
+        <StatCard label="Tickets sold" value={sold} hint="Across published events" />
+        <StatCard label="Money collected" value={formatMoney(revenue)} hint="Tickets × price" />
+        <StatCard label="Waiting for approval" value={pending} />
       </div>
 
       <section>

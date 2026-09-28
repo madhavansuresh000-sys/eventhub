@@ -1,6 +1,6 @@
 import { NavLink, Outlet } from 'react-router-dom'
 
-import { OrganizerDataProvider, useOrganizerData } from '../../state/OrganizerDataContext'
+import { useOrganizerData } from '../../state/OrganizerDataContext'
 import { gradientFor } from '../../utils/format'
 
 const links = [
@@ -39,13 +39,11 @@ function Sidebar() {
 /** Dashboard layout for the organizer area: club card + menu on the left, page on the right. */
 export default function OrganizerLayout() {
   return (
-    <OrganizerDataProvider>
-      <div className="grid gap-8 lg:grid-cols-[220px_1fr]">
-        <Sidebar />
-        <div className="min-w-0">
-          <Outlet />
-        </div>
+    <div className="grid gap-8 lg:grid-cols-[220px_1fr]">
+      <Sidebar />
+      <div className="min-w-0">
+        <Outlet />
       </div>
-    </OrganizerDataProvider>
+    </div>
   )
 }

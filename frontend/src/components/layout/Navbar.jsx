@@ -10,8 +10,9 @@ const links = [
   { to: '/', label: 'Home', end: true },
   { to: '/events', label: 'Events' },
   { to: '/my-tickets', label: 'My Tickets' },
-  // shown to everyone during Phase 3; Phase 5 shows it only to organizers
+  // shown to everyone during Phase 3; Phase 5 shows them only to organizers / admins
   { to: '/organizer', label: 'Organizer' },
+  { to: '/admin', label: 'Admin' },
 ]
 
 const linkClass = ({ isActive }) =>
