@@ -14,3 +14,15 @@ in My tickets before running it again.
 ```
 node tools/edge-demo.mjs demo-shots
 ```
+
+## edge-tour.mjs - guided tour of the WHOLE project, with an explanation on screen for every step
+
+20 steps: visitor + server-side filters -> login as Ravi (JWT cookie) -> book Robo Race (seat hold,
+optimistic locking) -> test payment (idempotent confirm) -> QR ticket -> My tickets -> Madhavan creates
+and submits an event -> admin approves it -> Activity log -> Kavya is blocked from the admin area.
+Each run creates a new "Kotlin for Beginners HH:MM" event. Ravi must not already have a Robo Race booking
+(cancel it in My tickets before running again).
+
+```
+node tools/edge-tour.mjs tour-shots
+```
