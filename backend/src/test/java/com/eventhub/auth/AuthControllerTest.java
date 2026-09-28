@@ -158,6 +158,14 @@ class AuthControllerTest {
 			.andExpect(jsonPath("$.detail").value(containsString("CSRF")));
 	}
 
+	/** A logged-in request must not replace the CSRF token (it did once: every request looked like a new login). */
+	@Test
+	void csrfTokenStaysTheSameWhileLoggedIn() throws Exception {
+		mvc.perform(get("/api/auth/me").with(accounts.as(accounts.student())))
+			.andExpect(status().isOk())
+			.andExpect(cookie().doesNotExist("XSRF-TOKEN"));
+	}
+
 	@Test
 	void anyResponseGivesTheBrowserACsrfCookie() throws Exception {
 		mvc.perform(get("/api/auth/me"))

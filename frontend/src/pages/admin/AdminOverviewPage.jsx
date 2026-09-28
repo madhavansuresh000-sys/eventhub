@@ -8,10 +8,19 @@ import Card from '../../components/ui/Card'
 import EmptyState from '../../components/ui/EmptyState'
 import { Skeleton } from '../../components/ui/Loader'
 import StatCard from '../../components/ui/StatCard'
-import { loadClubStats, selectApprovalQueue, selectClubStats, selectDecisions, selectStatsLoad } from '../../store/adminSlice'
+import { loadAuditLog, loadClubStats, selectApprovalQueue, selectAuditLog, selectClubStats, selectStatsLoad } from '../../store/adminSlice'
 import { formatMoney, formatShortDate, gradientFor } from '../../utils/format'
 
-const timeFormat = new Intl.DateTimeFormat('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true })
+const whenFormat = new Intl.DateTimeFormat('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', hour12: true })
+
+/** How each audit action is shown. */
+const actions = {
+  CREATE: { color: 'gray', text: 'Created' },
+  UPDATE: { color: 'gray', text: 'Edited' },
+  SUBMIT: { color: 'amber', text: 'Submitted' },
+  APPROVE: { color: 'green', text: 'Approved' },
+  REJECT: { color: 'red', text: 'Sent back' },
+}
 
 /** One row per club, with a bar showing its share of all tickets sold. */
 function ClubTable({ rows }) {
@@ -63,11 +72,12 @@ export default function AdminOverviewPage() {
   const stats = useSelector(selectClubStats)
   const { status, error } = useSelector(selectStatsLoad)
   const queue = useSelector(selectApprovalQueue)
-  const decisions = useSelector(selectDecisions)
+  const audit = useSelector(selectAuditLog)
 
   // fresh numbers every time the page opens
   useEffect(() => {
     dispatch(loadClubStats())
+    dispatch(loadAuditLog())
   }, [dispatch])
 
   if (status === 'failed') {
@@ -123,19 +133,21 @@ export default function AdminOverviewPage() {
         </section>
 
         <section>
-          <h2 className="mb-3 text-xl font-bold text-slate-900 dark:text-white">Your recent decisions</h2>
+          <h2 className="mb-3 text-xl font-bold text-slate-900 dark:text-white">Activity log</h2>
           <Card className="divide-y divide-slate-100 dark:divide-slate-800">
-            {decisions.length === 0 ? (
-              <p className="p-4 text-sm text-slate-500">Approvals and send-backs you make appear here.</p>
+            {audit.length === 0 ? (
+              <p className="p-4 text-sm text-slate-500">Every create, edit, submit, approve and send-back appears here.</p>
             ) : (
-              decisions.map((d) => (
-                <div key={`${d.eventId}-${d.at}`} className="p-4">
+              audit.map((a) => (
+                <div key={a.id} className="p-4">
                   <div className="flex flex-wrap items-center gap-2">
-                    <Badge color={d.approved ? 'green' : 'red'}>{d.approved ? 'Approved' : 'Sent back'}</Badge>
-                    <p className="font-semibold text-slate-900 dark:text-white">{d.title}</p>
+                    <Badge color={actions[a.action]?.color}>{actions[a.action]?.text ?? a.action}</Badge>
+                    <p className="font-semibold text-slate-900 dark:text-white">{a.eventTitle}</p>
                   </div>
-                  <p className="mt-1 text-sm text-slate-500">{d.club.name} · {timeFormat.format(new Date(d.at))}</p>
-                  {d.reason && <p className="mt-1 text-sm italic text-slate-600 dark:text-slate-400">"{d.reason}"</p>}
+                  <p className="mt-1 text-sm text-slate-500">
+                    by {a.userName ?? 'system'} · {whenFormat.format(new Date(a.createdAt))}
+                  </p>
+                  {a.details && <p className="mt-1 text-sm italic text-slate-600 dark:text-slate-400">"{a.details}"</p>}
                 </div>
               ))
             )}
@@ -144,7 +156,7 @@ export default function AdminOverviewPage() {
       </div>
 
       <p className="text-xs text-slate-500">
-        Live data from GET /api/admin/stats/clubs. Tickets sold = booked seats of published events (real bookings arrive in Phase 6). Phase 5 shows this page only to admins.
+        Live data from GET /api/admin/stats/clubs. Tickets sold = booked seats of published events (real bookings arrive in Phase 6). Activity from GET /api/admin/audit. Admins only.
       </p>
     </div>
   )

@@ -37,7 +37,7 @@ export default function CertificateViewPage() {
         <h1 className="mt-4 font-serif text-4xl font-bold text-slate-900 sm:text-5xl">Certificate of Participation</h1>
         <p className="mt-8 text-slate-600">This is to certify that</p>
         <p className="mt-2 font-serif text-3xl font-semibold text-brand-800">{student.name}</p>
-        <p className="mt-1 text-sm text-slate-600">{student.department}, Year {student.year}</p>
+        {student.course && <p className="mt-1 text-sm text-slate-600">{student.course}</p>}
         <p className="mx-auto mt-6 max-w-lg leading-relaxed text-slate-700">
           participated in <strong>{ticket.title}</strong>, organised by the {ticket.clubName}, held on{' '}
           <strong>{formatLongDate(ticket.startTime)}</strong> at {ticket.venue}.

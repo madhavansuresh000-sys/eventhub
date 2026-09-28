@@ -185,7 +185,7 @@ export default function ApprovalQueuePage() {
       )}
 
       <p className="text-xs text-slate-500">
-        Live data from the backend (POST /api/events/{'{id}'}/approve and /reject). Phase 5 shows this page only to admins.
+        Live data from the backend (POST /api/events/{'{id}'}/approve and /reject). Admins only (the server checks every call).
       </p>
 
       <Modal

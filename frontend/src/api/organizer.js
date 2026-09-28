@@ -2,7 +2,7 @@ import api from './client'
 
 /**
  * Organizer calls. Reading uses /api/organizer/** (every status); saving uses the Phase 2 event URLs.
- * Phase 5 adds the login token to every call automatically (in client.js).
+ * The login cookie and CSRF header go with every call automatically (see api/auth.js).
  */
 
 /** Drafts, waiting and published events of one club, soonest first. */

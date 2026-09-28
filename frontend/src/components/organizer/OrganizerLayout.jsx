@@ -2,7 +2,8 @@ import { useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { NavLink, Outlet } from 'react-router-dom'
 
-import { loadClubEvents, selectClub, selectOrganizer } from '../../store/organizerSlice'
+import { clubsWithRole, selectUser } from '../../store/authSlice'
+import { clubSelected, loadClubEvents, selectClub, selectOrganizer } from '../../store/organizerSlice'
 import Button from '../ui/Button'
 import EmptyState from '../ui/EmptyState'
 import { Skeleton } from '../ui/Loader'
@@ -20,6 +21,29 @@ const linkClass = ({ isActive }) =>
     ? 'bg-brand-600 text-white'
     : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800')
 
+/** Only for someone who organizes 2 or more clubs. */
+function ClubSwitcher() {
+  const dispatch = useDispatch()
+  const mine = clubsWithRole(useSelector(selectUser), 'ORGANIZER')
+  const { clubId } = useSelector(selectOrganizer)
+  if (mine.length < 2) return null
+  return (
+    <label className="mt-2 block text-xs text-slate-500">
+      Switch club
+      <select
+        className="mt-1 block w-full rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+        value={clubId ?? ''}
+        onChange={(e) => {
+          dispatch(clubSelected(Number(e.target.value)))
+          dispatch(loadClubEvents())
+        }}
+      >
+        {mine.map((c) => <option key={c.clubId} value={c.clubId}>{c.clubName}</option>)}
+      </select>
+    </label>
+  )
+}
+
 function Sidebar() {
   const club = useSelector(selectClub)
   return (
@@ -29,6 +53,7 @@ function Sidebar() {
         <div className="p-4">
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Organizer</p>
           <p className="font-bold text-slate-900 dark:text-white">{club?.name ?? 'Loading…'}</p>
+          <ClubSwitcher />
         </div>
       </div>
       {/* a row that scrolls sideways on phones, a column on laptops */}

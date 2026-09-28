@@ -26,6 +26,7 @@ export const notNegative = (label) => (v) => (v === '' || Number(v) >= 0 ? '' : 
 export const strongPassword = (v) => {
   if (!v) return ''
   if (v.length < 8) return 'Use at least 8 characters'
+  if (v.length > 72) return 'Use at most 72 characters' // BCrypt only reads the first 72
   if (!/[a-zA-Z]/.test(v) || !/\d/.test(v)) return 'Use both letters and numbers'
   return ''
 }

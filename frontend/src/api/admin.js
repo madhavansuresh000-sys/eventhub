@@ -11,3 +11,7 @@ export const approveEventRequest = (id) => api.post(`/events/${id}/approve`).the
 
 /** PENDING_APPROVAL -> DRAFT, with a reason for the organizer (max 500 characters) */
 export const rejectEventRequest = (id, reason) => api.post(`/events/${id}/reject`, { reason }).then((r) => r.data)
+
+/** Audit log, newest first: { content: [{ action, eventTitle, userName, userEmail, details, createdAt }], ... } */
+export const fetchAuditLog = ({ page = 0, size = 20 } = {}) =>
+  api.get('/admin/audit', { params: { page, size } }).then((r) => r.data)

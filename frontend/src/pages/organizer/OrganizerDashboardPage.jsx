@@ -99,7 +99,7 @@ export default function OrganizerDashboardPage() {
       </section>
 
       <p className="text-xs text-slate-500">
-        Live data from the backend. Phase 5 shows this page only to the club's organizers.{' '}
+        Live data from the backend. Only this club's organizers can see it (the server checks every call).{' '}
         <Link to="/admin/approvals" className="underline">Admin approval queue</Link>
       </p>
 

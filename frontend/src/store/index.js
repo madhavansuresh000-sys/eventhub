@@ -1,9 +1,11 @@
 import { configureStore } from '@reduxjs/toolkit'
 
+import api from '../api/client'
+
 import adminReducer from './adminSlice'
-import authReducer from './authSlice'
+import authReducer, { loadSession, sessionExpired } from './authSlice'
 import cartReducer from './cartSlice'
-import notificationsReducer from './notificationsSlice'
+import notificationsReducer, { notify } from './notificationsSlice'
 import organizerReducer from './organizerSlice'
 import studentReducer from './studentSlice'
 
@@ -22,4 +24,18 @@ export const store = configureStore({
     organizer: organizerReducer,
     admin: adminReducer,
   },
+})
+
+// Ask the server who is logged in (the cookie decides) as soon as the app starts.
+store.dispatch(loadSession())
+
+// If any call answers 401 while we think someone is logged in, their login ran out (8 hours):
+// forget the user and say so. Protected pages then send them to the login page.
+api.interceptors.response.use(undefined, (error) => {
+  const isAuthCall = error.config?.url?.startsWith('/auth/')
+  if (error.response?.status === 401 && !isAuthCall && store.getState().auth.user) {
+    store.dispatch(sessionExpired())
+    store.dispatch(notify('Your login has expired. Please log in again.', 'error'))
+  }
+  return Promise.reject(error)
 })

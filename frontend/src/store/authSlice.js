@@ -1,25 +1,97 @@
-import { createSlice } from '@reduxjs/toolkit'
+import { createAsyncThunk, createSlice } from '@reduxjs/toolkit'
+
+import { fetchMe, loginRequest, logoutRequest, registerRequest } from '../api/auth'
+import { describeError } from '../hooks/useAsync'
 
 /**
- * Who is logged in. Phase 3: the Login / Register forms "log in" without a server (demo).
- * Phase 5 fills this from POST /api/auth/login and adds the JWT token.
+ * Who is logged in (Phase 5). The token itself is in an httpOnly cookie that JavaScript cannot read,
+ * so the app asks the server "who am I?" (GET /api/auth/me) when it starts.
+ *
+ * user = { id, fullName, email, department, yearOfStudy, roles: ['STUDENT'|'ADMIN'],
+ *          clubs: [{ clubId, clubName, clubSlug, role: 'ORGANIZER'|'VOLUNTEER'|'MEMBER' }] }
  */
+
+export const loadSession = createAsyncThunk('auth/loadSession', async (_, { rejectWithValue }) => {
+  try {
+    return await fetchMe()
+  } catch (e) {
+    return rejectWithValue(describeError(e))
+  }
+})
+
+export const login = createAsyncThunk('auth/login', async (credentials, { rejectWithValue }) => {
+  try {
+    return await loginRequest(credentials)
+  } catch (e) {
+    return rejectWithValue(describeError(e))
+  }
+})
+
+export const register = createAsyncThunk('auth/register', async (form, { rejectWithValue }) => {
+  try {
+    return await registerRequest(form)
+  } catch (e) {
+    return rejectWithValue(describeError(e))
+  }
+})
+
+export const logout = createAsyncThunk('auth/logout', async () => {
+  await logoutRequest().catch(() => {}) // even if the server is down, forget the user here
+})
+
 const authSlice = createSlice({
   name: 'auth',
-  initialState: { user: null, token: null },
+  // status: 'checking' until the first /me answer, so protected pages do not send you to login too early
+  initialState: { user: null, status: 'checking' },
   reducers: {
-    /** payload: { name, email, role } */
-    loggedIn: (state, action) => {
-      state.user = action.payload
-    },
-    loggedOut: (state) => {
+    /** A call got 401: the login ran out (8 hours). */
+    sessionExpired: (state) => {
       state.user = null
-      state.token = null
     },
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(loadSession.fulfilled, (state, action) => {
+        state.user = action.payload
+        state.status = 'ready'
+      })
+      .addCase(loadSession.rejected, (state) => {
+        state.user = null // server down: behave like a visitor; public pages still show their own errors
+        state.status = 'ready'
+      })
+      .addCase(login.fulfilled, (state, action) => {
+        state.user = action.payload
+      })
+      .addCase(register.fulfilled, (state, action) => {
+        state.user = action.payload
+      })
+      .addCase(logout.fulfilled, (state) => {
+        state.user = null
+      })
   },
 })
 
-export const { loggedIn, loggedOut } = authSlice.actions
+export const { sessionExpired } = authSlice.actions
 export default authSlice.reducer
 
 export const selectUser = (state) => state.auth.user
+export const selectAuthStatus = (state) => state.auth.status
+
+// ---- permission helpers: the SAME questions the backend asks (it always checks again) ----
+
+export const isAdmin = (user) => Boolean(user?.roles?.includes('ADMIN'))
+
+/** Clubs where the user has this club role, e.g. clubsWithRole(user, 'ORGANIZER') */
+export const clubsWithRole = (user, role) => (user?.clubs ?? []).filter((c) => c.role === role)
+
+export const isOrganizer = (user) => clubsWithRole(user, 'ORGANIZER').length > 0
+
+/** Gate scanning: volunteers and organizers. */
+export const canScan = (user) => isOrganizer(user) || clubsWithRole(user, 'VOLUNTEER').length > 0
+
+/** Where to go after login: the page for the user's main job. */
+export function homeFor(user) {
+  if (isAdmin(user)) return '/admin'
+  if (isOrganizer(user)) return '/organizer'
+  return '/my-tickets'
+}

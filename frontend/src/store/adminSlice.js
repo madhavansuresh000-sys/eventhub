@@ -1,16 +1,25 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit'
 
-import { approveEventRequest, fetchClubStats, fetchPendingEvents, rejectEventRequest } from '../api/admin'
+import { approveEventRequest, fetchAuditLog, fetchClubStats, fetchPendingEvents, rejectEventRequest } from '../api/admin'
 import { describeError } from '../hooks/useAsync'
+import { logout, sessionExpired } from './authSlice'
 
 /**
- * Admin data from the backend: the approval queue and one stats row per club.
- * "decisions" is only this browser session's history (an audit log table could come later).
+ * Admin data from the backend: the approval queue, one stats row per club,
+ * and the audit log (who created / edited / submitted / approved / rejected what).
  */
 
 export const loadApprovalQueue = createAsyncThunk('admin/loadQueue', async (_, { rejectWithValue }) => {
   try {
     return await fetchPendingEvents()
+  } catch (e) {
+    return rejectWithValue(describeError(e))
+  }
+})
+
+export const loadAuditLog = createAsyncThunk('admin/loadAudit', async (_, { rejectWithValue }) => {
+  try {
+    return (await fetchAuditLog({ size: 10 })).content
   } catch (e) {
     return rejectWithValue(describeError(e))
   }
@@ -58,15 +67,15 @@ function tracked(builder, thunk, key, onData) {
     })
 }
 
-function decided(state, event, approved, reason) {
+function removeFromQueue(state, event) {
   state.queue = state.queue.filter((e) => e.id !== event.id)
-  state.decisions.unshift({ eventId: event.id, title: event.title, club: event.club, approved, reason, at: new Date().toISOString() })
-  state.decisions.splice(10) // keep the newest 10
 }
+
+const initialState = { queue: [], queueLoad: load, stats: [], statsLoad: load, audit: [], auditLoad: load }
 
 const adminSlice = createSlice({
   name: 'admin',
-  initialState: { queue: [], queueLoad: load, stats: [], statsLoad: load, decisions: [] },
+  initialState,
   reducers: {},
   extraReducers: (builder) => {
     tracked(builder, loadApprovalQueue, 'queueLoad', (state, events) => {
@@ -75,9 +84,14 @@ const adminSlice = createSlice({
     tracked(builder, loadClubStats, 'statsLoad', (state, rows) => {
       state.stats = rows
     })
+    tracked(builder, loadAuditLog, 'auditLoad', (state, entries) => {
+      state.audit = entries
+    })
     builder
-      .addCase(approveEvent.fulfilled, (state, action) => decided(state, action.payload, true, null))
-      .addCase(rejectEvent.fulfilled, (state, action) => decided(state, action.payload, false, action.payload.reviewNote))
+      .addCase(approveEvent.fulfilled, (state, action) => removeFromQueue(state, action.payload))
+      .addCase(rejectEvent.fulfilled, (state, action) => removeFromQueue(state, action.payload))
+      .addCase(logout.fulfilled, () => initialState)
+      .addCase(sessionExpired, () => initialState)
   },
 })
 
@@ -87,4 +101,4 @@ export const selectApprovalQueue = (state) => state.admin.queue
 export const selectQueueLoad = (state) => state.admin.queueLoad
 export const selectClubStats = (state) => state.admin.stats
 export const selectStatsLoad = (state) => state.admin.statsLoad
-export const selectDecisions = (state) => state.admin.decisions
+export const selectAuditLog = (state) => state.admin.audit

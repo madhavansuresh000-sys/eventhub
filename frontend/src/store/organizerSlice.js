@@ -5,22 +5,23 @@ import { createEvent, fetchClubEvents, submitEventForApproval, updateEvent } fro
 import { sampleVolunteers } from '../data/sampleVolunteers'
 import { describeError } from '../hooks/useAsync'
 import { approveEvent, rejectEvent } from './adminSlice'
-
-/**
- * Which club the organizer runs. Phase 5 reads it from the logged-in user (club_members table);
- * until then the demo organizer runs the Coding Club (id 1 in the database).
- */
-export const DEMO_ORGANIZER_CLUB_ID = 1
+import { clubsWithRole, logout, sessionExpired } from './authSlice'
 
 // ---- async thunks: each one calls the API and has 3 outcomes: pending -> fulfilled / rejected ----
 // rejectWithValue(describeError(e)) keeps the backend's message and field errors for the page.
 
-/** The club + all its events (drafts too). */
+/**
+ * The club + all its events (drafts too). Which club: the one picked in the sidebar,
+ * else the first club the logged-in user organizes (from GET /api/auth/me).
+ */
 export const loadClubEvents = createAsyncThunk('organizer/loadClubEvents', async (_, { getState, rejectWithValue }) => {
-  const clubId = getState().organizer.clubId
+  const mine = clubsWithRole(getState().auth.user, 'ORGANIZER')
+  const picked = getState().organizer.clubId
+  const clubId = mine.some((c) => c.clubId === picked) ? picked : mine[0]?.clubId
+  if (!clubId) return rejectWithValue({ message: 'You are not an organizer of any club.' })
   try {
     const [clubs, events] = await Promise.all([fetchClubs(), fetchClubEvents(clubId)])
-    return { club: clubs.find((c) => c.id === clubId) ?? null, events }
+    return { clubId, club: clubs.find((c) => c.id === clubId) ?? null, events }
   } catch (e) {
     return rejectWithValue(describeError(e))
   }
@@ -57,17 +58,23 @@ function upsert(state, event) {
   state.events.sort((a, b) => a.startTime.localeCompare(b.startTime))
 }
 
+const initialState = {
+  clubId: null, // set from the logged-in user's clubs
+  club: null,
+  events: [],
+  status: 'idle', // idle -> loading -> ready | failed
+  error: null,
+  volunteers: sampleVolunteers, // sample until volunteer gate duty is stored (Phase 7 check-in)
+}
+
 const organizerSlice = createSlice({
   name: 'organizer',
-  initialState: {
-    clubId: DEMO_ORGANIZER_CLUB_ID,
-    club: null,
-    events: [],
-    status: 'idle', // idle -> loading -> ready | failed
-    error: null,
-    volunteers: sampleVolunteers, // sample until volunteer accounts exist (Phase 5 users, Phase 7 check-in)
-  },
+  initialState,
   reducers: {
+    /** Someone who organizes 2+ clubs picked another one in the sidebar. */
+    clubSelected: (state, action) => {
+      state.clubId = action.payload
+    },
     volunteerAdded: (state, action) => {
       const id = Math.max(0, ...state.volunteers.map((v) => v.id)) + 1
       state.volunteers.push({ ...action.payload, id, eventId: Number(action.payload.eventId) })
@@ -85,6 +92,7 @@ const organizerSlice = createSlice({
       })
       .addCase(loadClubEvents.fulfilled, (state, action) => {
         state.status = 'ready'
+        state.clubId = action.payload.clubId
         state.club = action.payload.club
         state.events = action.payload.events
       })
@@ -101,10 +109,13 @@ const organizerSlice = createSlice({
       .addCase(rejectEvent.fulfilled, (state, action) => {
         if (state.events.some((e) => e.id === action.payload.id)) upsert(state, action.payload)
       })
+      // a different person may log in next on this computer: forget this club's data
+      .addCase(logout.fulfilled, () => initialState)
+      .addCase(sessionExpired, () => initialState)
   },
 })
 
-export const { volunteerAdded, volunteerRemoved } = organizerSlice.actions
+export const { clubSelected, volunteerAdded, volunteerRemoved } = organizerSlice.actions
 export default organizerSlice.reducer
 
 export const selectOrganizer = (state) => state.organizer

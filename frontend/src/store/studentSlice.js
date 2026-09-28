@@ -1,6 +1,6 @@
-import { createSlice } from '@reduxjs/toolkit'
+import { createSelector, createSlice } from '@reduxjs/toolkit'
 
-import { currentStudent, sampleTickets, sampleWaitlist } from '../data/sampleStudent'
+import { sampleTickets, sampleWaitlist } from '../data/sampleStudent'
 
 /**
  * The student's tickets and waitlist places (sample data until Phase 4 / 6).
@@ -15,7 +15,7 @@ function randomCode() {
 
 const studentSlice = createSlice({
   name: 'student',
-  initialState: { profile: currentStudent, tickets: sampleTickets, waitlist: sampleWaitlist },
+  initialState: { tickets: sampleTickets, waitlist: sampleWaitlist },
   reducers: {
     ticketsBooked: {
       reducer: (state, action) => {
@@ -52,6 +52,15 @@ const studentSlice = createSlice({
 export const { ticketsBooked, ticketCancelled, waitlistJoined, waitlistLeft } = studentSlice.actions
 export default studentSlice.reducer
 
-export const selectStudent = (state) => state.student.profile
+/**
+ * The logged-in user as the student pages show them (from the auth slice, Phase 5).
+ * createSelector: the same object comes back until the user changes, so pages do not re-render for nothing.
+ */
+export const selectStudent = createSelector([(state) => state.auth.user], (user) => user && {
+  name: user.fullName,
+  email: user.email,
+  // "CSE, Year 3" - either part may be missing (e.g. the admin account)
+  course: [user.department, user.yearOfStudy && `Year ${user.yearOfStudy}`].filter(Boolean).join(', ') || null,
+})
 export const selectTickets = (state) => state.student.tickets
 export const selectWaitlist = (state) => state.student.waitlist

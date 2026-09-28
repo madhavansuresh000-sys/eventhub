@@ -103,7 +103,7 @@ function Checkout({ event, quantity }) {
           <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
             <div><dt className="text-slate-500">Name</dt><dd className="font-medium text-slate-900 dark:text-white">{student.name}</dd></div>
             <div><dt className="text-slate-500">Email</dt><dd className="font-medium text-slate-900 dark:text-white">{student.email}</dd></div>
-            <div><dt className="text-slate-500">Department</dt><dd className="font-medium text-slate-900 dark:text-white">{student.department}, Year {student.year}</dd></div>
+            {student.course && <div><dt className="text-slate-500">Course</dt><dd className="font-medium text-slate-900 dark:text-white">{student.course}</dd></div>}
           </dl>
           <p className="mt-3 text-xs text-slate-500">Your tickets are sent to this email.</p>
         </Card>

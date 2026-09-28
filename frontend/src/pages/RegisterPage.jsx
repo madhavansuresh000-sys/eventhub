@@ -1,17 +1,16 @@
 import { useState } from 'react'
 import { useDispatch } from 'react-redux'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 
-import AuthCard, { Notice } from '../components/auth/AuthCard'
+import AuthCard from '../components/auth/AuthCard'
 import Button from '../components/ui/Button'
 import { PasswordField, SelectField, TextField } from '../components/ui/FormField'
 import useForm from '../hooks/useForm'
-import { loggedIn } from '../store/authSlice'
+import { register } from '../store/authSlice'
+import { notify } from '../store/notificationsSlice'
 import {
   email, matches, minLength, mustBeTrue, passwordScore, required, strongPassword,
 } from '../utils/validation'
-
-const wait = (ms) => new Promise((r) => setTimeout(r, ms))
 
 const departments = ['CSE', 'IT', 'ECE', 'EEE', 'Mechanical', 'Civil', 'MBA'].map((d) => ({ value: d, label: d }))
 const years = [1, 2, 3, 4].map((y) => ({ value: String(y), label: `Year ${y}` }))
@@ -50,16 +49,28 @@ function StrengthMeter({ password }) {
 }
 
 export default function RegisterPage() {
-  const [done, setDone] = useState(null)
   const dispatch = useDispatch()
+  const navigate = useNavigate()
+  const [serverError, setServerError] = useState(null)
 
   const { field, handleSubmit, submitting, values } = useForm(
     { fullName: '', email: '', department: '', year: '', password: '', confirm: '', agree: false },
     rules,
-    async (v) => {
-      await wait(700) // Phase 5: POST /api/auth/register
-      dispatch(loggedIn({ name: v.fullName.trim(), email: v.email.trim(), role: 'STUDENT' }))
-      setDone(v.fullName.trim().split(' ')[0])
+    async (v, { setServerErrors }) => {
+      setServerError(null)
+      try {
+        // POST /api/auth/register: creates a STUDENT account and logs it in (cookie)
+        const me = await dispatch(register({
+          fullName: v.fullName.trim(), email: v.email.trim(), password: v.password,
+          department: v.department, yearOfStudy: Number(v.year),
+        })).unwrap()
+        dispatch(notify(`Welcome to EventHub, ${me.fullName.split(' ')[0]}! Your account is ready.`))
+        navigate('/events', { replace: true })
+      } catch (e) {
+        setServerError(e.message) // e.g. 409 "An account with this email already exists"
+        const { yearOfStudy, ...rest } = e.fieldErrors ?? {}
+        setServerErrors(yearOfStudy ? { ...rest, year: yearOfStudy } : rest) // backend name -> form field name
+      }
     },
   )
 
@@ -69,42 +80,41 @@ export default function RegisterPage() {
       subtitle="Book seats, join waitlists and collect certificates."
       footer={<>Already have an account? <Link to="/login" className="font-semibold text-brand-600 hover:underline dark:text-brand-400">Log in</Link></>}
     >
-      {done ? (
-        <Notice tone="success">
-          🎉 Welcome, <strong>{done}</strong>! You are logged in (demo). Accounts are saved to the database in Phase 5.
-        </Notice>
-      ) : (
-        <form onSubmit={handleSubmit} noValidate className="space-y-4">
-          <TextField label="Full name" autoComplete="name" placeholder="Madhavan Suresh" {...field('fullName')} />
-          <TextField label="College email" type="email" autoComplete="email" placeholder="you@college.edu"
-            hint="We send your tickets here." {...field('email')} />
+      <form onSubmit={handleSubmit} noValidate className="space-y-4">
+        {serverError && (
+          <p role="alert" className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-800 dark:bg-red-950/40 dark:text-red-300">
+            {serverError}
+          </p>
+        )}
+        <TextField label="Full name" autoComplete="name" placeholder="Madhavan Suresh" {...field('fullName')} />
+        <TextField label="College email" type="email" autoComplete="email" placeholder="you@college.edu"
+          hint="We send your tickets here." {...field('email')} />
 
-          <div className="grid grid-cols-2 gap-3">
-            <SelectField label="Department" placeholder="Choose…" options={departments} {...field('department')} />
-            <SelectField label="Year" placeholder="Choose…" options={years} {...field('year')} />
-          </div>
+        <div className="grid grid-cols-2 gap-3">
+          <SelectField label="Department" placeholder="Choose…" options={departments} {...field('department')} />
+          <SelectField label="Year" placeholder="Choose…" options={years} {...field('year')} />
+        </div>
 
-          <PasswordField label="Password" autoComplete="new-password" hint="At least 8 characters, with letters and numbers."
-            {...field('password')}>
-            <StrengthMeter password={values.password} />
-          </PasswordField>
-          <PasswordField label="Confirm password" autoComplete="new-password" {...field('confirm')} />
+        <PasswordField label="Password" autoComplete="new-password" hint="At least 8 characters, with letters and numbers."
+          {...field('password')}>
+          <StrengthMeter password={values.password} />
+        </PasswordField>
+        <PasswordField label="Confirm password" autoComplete="new-password" {...field('confirm')} />
 
-          <div>
-            <label className="flex items-start gap-2 text-sm text-slate-700 dark:text-slate-300">
-              <input id="agree" type="checkbox" className="mt-0.5 h-4 w-4 rounded accent-brand-600"
-                name="agree" checked={values.agree} onChange={field('agree').onChange} onBlur={field('agree').onBlur}
-                aria-invalid={Boolean(field('agree').error)} aria-describedby={field('agree').error ? 'agree-error' : undefined} />
-              I agree to follow the event rules and the college code of conduct.
-            </label>
-            {field('agree').error && <p id="agree-error" className="mt-1 text-sm text-red-600 dark:text-red-400">{field('agree').error}</p>}
-          </div>
+        <div>
+          <label className="flex items-start gap-2 text-sm text-slate-700 dark:text-slate-300">
+            <input id="agree" type="checkbox" className="mt-0.5 h-4 w-4 rounded accent-brand-600"
+              name="agree" checked={values.agree} onChange={field('agree').onChange} onBlur={field('agree').onBlur}
+              aria-invalid={Boolean(field('agree').error)} aria-describedby={field('agree').error ? 'agree-error' : undefined} />
+            I agree to follow the event rules and the college code of conduct.
+          </label>
+          {field('agree').error && <p id="agree-error" className="mt-1 text-sm text-red-600 dark:text-red-400">{field('agree').error}</p>}
+        </div>
 
-          <Button type="submit" size="lg" className="w-full" disabled={submitting}>
-            {submitting ? 'Creating account…' : 'Create account'}
-          </Button>
-        </form>
-      )}
+        <Button type="submit" size="lg" className="w-full" disabled={submitting}>
+          {submitting ? 'Creating account…' : 'Create account'}
+        </Button>
+      </form>
     </AuthCard>
   )
 }

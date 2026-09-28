@@ -37,7 +37,10 @@ public class SecurityConfig {
 			// CSRF for a single-page app: the server sets an XSRF-TOKEN cookie that JavaScript CAN read;
 			// Axios copies it into the X-XSRF-TOKEN header. Another website cannot read our cookie,
 			// so it cannot send a valid header, and its forged POST gets 403.
-			.csrf(csrf -> csrf.spa())
+			// sessionAuthenticationStrategy: Spring normally makes a NEW CSRF token whenever someone "logs in".
+			// Without server sessions it thinks every request with our JWT cookie is a new login, so the token
+			// changed on every request and a second request sent at the same moment could fail. Keep one token.
+			.csrf(csrf -> csrf.spa().sessionAuthenticationStrategy((authentication, request, response) -> { }))
 			.addFilterAfter(new CsrfCookieFilter(), CsrfFilter.class)
 			// use the rules from CorsConfig (browser calls from other addresses)
 			.cors(Customizer.withDefaults())

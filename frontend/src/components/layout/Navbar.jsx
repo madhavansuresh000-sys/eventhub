@@ -1,24 +1,27 @@
 import { useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import { Link, NavLink, useLocation } from 'react-router-dom'
+import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
 
 import useCountdown, { formatClock } from '../../hooks/useCountdown'
 import useTheme from '../../hooks/useTheme'
-import { loggedOut, selectUser } from '../../store/authSlice'
+import { canScan, isAdmin, isOrganizer, logout, selectUser } from '../../store/authSlice'
 import { selectCart } from '../../store/cartSlice'
 import { notify } from '../../store/notificationsSlice'
 import Button from '../ui/Button'
 import { CloseIcon, MenuIcon, MoonIcon, SunIcon } from '../ui/icons'
 import Logo from './Logo'
 
-const links = [
-  { to: '/', label: 'Home', end: true },
-  { to: '/events', label: 'Events' },
-  { to: '/my-tickets', label: 'My Tickets' },
-  // shown to everyone during Phase 3; Phase 5 shows them only to organizers / admins
-  { to: '/organizer', label: 'Organizer' },
-  { to: '/admin', label: 'Admin' },
-]
+/** Everyone sees Home and Events; the other links depend on who is logged in. */
+function linksFor(user) {
+  return [
+    { to: '/', label: 'Home', end: true },
+    { to: '/events', label: 'Events' },
+    user && { to: '/my-tickets', label: 'My Tickets' },
+    isOrganizer(user) && { to: '/organizer', label: 'Organizer' },
+    canScan(user) && { to: '/scanner', label: 'Scanner' },
+    isAdmin(user) && { to: '/admin', label: 'Admin' },
+  ].filter(Boolean)
+}
 
 const linkClass = ({ isActive }) =>
   'rounded-lg px-3 py-2 text-sm font-medium transition-colors ' +
@@ -63,13 +66,17 @@ function SeatHoldPill() {
 function AccountButtons({ className = '' }) {
   const user = useSelector(selectUser)
   const dispatch = useDispatch()
+  const navigate = useNavigate()
   if (!user) return <Button to="/login" size="sm" className={className}>Login</Button>
   return (
     <span className={`flex items-center gap-2 ${className}`}>
-      <span className="text-sm font-medium text-slate-700 dark:text-slate-200">Hi, {user.name.split(' ')[0]}</span>
-      <Button size="sm" variant="ghost" onClick={() => {
-        dispatch(loggedOut())
+      <span className="text-sm font-medium text-slate-700 dark:text-slate-200" title={user.email}>
+        Hi, {user.fullName.split(' ')[0]}
+      </span>
+      <Button size="sm" variant="ghost" onClick={async () => {
+        await dispatch(logout()) // the server deletes the login cookie
         dispatch(notify('You are logged out.'))
+        navigate('/')
       }}>Logout</Button>
     </span>
   )
@@ -78,6 +85,7 @@ function AccountButtons({ className = '' }) {
 export default function Navbar() {
   const [open, setOpen] = useState(false)
   const location = useLocation()
+  const links = linksFor(useSelector(selectUser))
   const [lastPath, setLastPath] = useState(location.pathname)
 
   // close the phone menu after moving to another page

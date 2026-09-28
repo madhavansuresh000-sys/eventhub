@@ -1,67 +1,71 @@
 import { useState } from 'react'
-import { useDispatch } from 'react-redux'
-import { Link } from 'react-router-dom'
+import { useDispatch, useSelector } from 'react-redux'
+import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom'
 
-import AuthCard, { Notice } from '../components/auth/AuthCard'
+import AuthCard from '../components/auth/AuthCard'
 import Button from '../components/ui/Button'
 import { PasswordField, TextField } from '../components/ui/FormField'
 import useForm from '../hooks/useForm'
-import { loggedIn } from '../store/authSlice'
+import { homeFor, login, selectUser } from '../store/authSlice'
+import { notify } from '../store/notificationsSlice'
 import { email, required } from '../utils/validation'
-
-const wait = (ms) => new Promise((r) => setTimeout(r, ms))
 
 const rules = {
   email: [required('Email'), email],
   password: [required('Password')],
 }
 
-export default function LoginPage() {
-  const [done, setDone] = useState(null)
-  const dispatch = useDispatch()
+/** Only go back to pages of this site (never to a link someone put in ?next=). */
+const safeNext = (next) => (next && next.startsWith('/') && !next.startsWith('//') ? next : null)
 
-  const { field, handleSubmit, submitting, values } = useForm(
-    { email: '', password: '', remember: true },
-    rules,
-    async (v) => {
-      await wait(600) // Phase 5: POST /api/auth/login (the server checks the password and sends a JWT)
-      const name = v.email.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
-      dispatch(loggedIn({ name, email: v.email.trim(), role: 'STUDENT' }))
-      setDone(v.email)
-    },
-  )
+export default function LoginPage() {
+  const dispatch = useDispatch()
+  const navigate = useNavigate()
+  const [params] = useSearchParams()
+  const user = useSelector(selectUser)
+  const [serverError, setServerError] = useState(null)
+  const next = safeNext(params.get('next'))
+
+  const { field, handleSubmit, submitting } = useForm({ email: '', password: '' }, rules, async (v) => {
+    setServerError(null)
+    try {
+      // POST /api/auth/login: the server checks the BCrypt hash and sets the httpOnly JWT cookie
+      const me = await dispatch(login({ email: v.email.trim(), password: v.password })).unwrap()
+      dispatch(notify(`Welcome back, ${me.fullName.split(' ')[0]}!`))
+      navigate(next ?? homeFor(me), { replace: true })
+    } catch (e) {
+      setServerError(e.message) // 401 wrong email or password, 429 locked after 5 tries
+    }
+  })
+
+  // already logged in (e.g. pressed Back after logging in): no need for this page
+  if (user && !submitting) return <Navigate to={next ?? homeFor(user)} replace />
 
   return (
     <AuthCard
       title="Welcome back"
-      subtitle="Log in to book events and see your tickets."
+      subtitle={next ? 'Please log in to continue.' : 'Log in to book events and see your tickets.'}
       footer={<>New to EventHub? <Link to="/register" className="font-semibold text-brand-600 hover:underline dark:text-brand-400">Create an account</Link></>}
     >
-      {done ? (
-        <Notice tone="success">
-          ✅ Logged in as <strong>{done}</strong> (demo: the password is not checked yet). Real login connects to the backend in Phase 5.
-        </Notice>
-      ) : (
-        <form onSubmit={handleSubmit} noValidate className="space-y-4">
-          <TextField label="Email" type="email" autoComplete="email" placeholder="you@college.edu" {...field('email')} />
-          <PasswordField label="Password" autoComplete="current-password" {...field('password')} />
+      <form onSubmit={handleSubmit} noValidate className="space-y-4">
+        {serverError && (
+          <p role="alert" className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-800 dark:bg-red-950/40 dark:text-red-300">
+            {serverError}
+          </p>
+        )}
+        <TextField label="Email" type="email" autoComplete="email" placeholder="you@college.edu" {...field('email')} />
+        <PasswordField label="Password" autoComplete="current-password" {...field('password')} />
 
-          <div className="flex items-center justify-between text-sm">
-            <label className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
-              <input id="remember" type="checkbox" className="h-4 w-4 rounded accent-brand-600"
-                checked={values.remember} onChange={field('remember').onChange} />
-              Remember me
-            </label>
-            <Link to="/forgot-password" className="py-1 font-medium text-brand-600 hover:underline dark:text-brand-400">
-              Forgot password?
-            </Link>
-          </div>
+        <div className="flex justify-end text-sm">
+          <Link to="/forgot-password" className="py-1 font-medium text-brand-600 hover:underline dark:text-brand-400">
+            Forgot password?
+          </Link>
+        </div>
 
-          <Button type="submit" size="lg" className="w-full" disabled={submitting}>
-            {submitting ? 'Checking…' : 'Log in'}
-          </Button>
-        </form>
-      )}
+        <Button type="submit" size="lg" className="w-full" disabled={submitting}>
+          {submitting ? 'Checking…' : 'Log in'}
+        </Button>
+      </form>
     </AuthCard>
   )
 }

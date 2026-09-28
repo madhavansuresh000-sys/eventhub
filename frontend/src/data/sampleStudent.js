@@ -1,16 +1,8 @@
 /**
  * SAMPLE DATA for the student pages (Phase 3).
  * Bookings, waitlists and certificates get a real backend in Phase 6 and 7;
- * until then these pages run on this data.
+ * until then these pages run on this data. The student's name and email come from their login (Phase 5).
  */
-
-export const currentStudent = {
-  id: 101,
-  name: 'Madhavan Suresh',
-  email: 'madhavan@college.edu',
-  department: 'CSE',
-  year: 3,
-}
 
 /** status: CONFIRMED (upcoming), ATTENDED (scanned at the gate), CANCELLED */
 export const sampleTickets = [

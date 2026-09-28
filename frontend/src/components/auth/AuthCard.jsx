@@ -14,7 +14,7 @@ export default function AuthCard({ title, subtitle, children, footer }) {
   )
 }
 
-/** Blue info box: "Demo mode, real login arrives in Phase 5". */
+/** Blue info box (or green with tone="success"). */
 export function Notice({ tone = 'info', children }) {
   const tones = {
     info: 'border-brand-200 bg-brand-50 text-brand-800 dark:border-brand-800 dark:bg-slate-900 dark:text-brand-200',

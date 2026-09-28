@@ -1,5 +1,7 @@
 import { createSlice } from '@reduxjs/toolkit'
 
+import { logout, sessionExpired } from './authSlice'
+
 export const HOLD_MINUTES = 10
 
 /**
@@ -24,6 +26,12 @@ const cartSlice = createSlice({
       state.item = null
       state.holdEndsAt = null
     },
+  },
+  // the seats were held for this person: drop them when they log out
+  extraReducers: (builder) => {
+    builder
+      .addCase(logout.fulfilled, () => ({ item: null, holdEndsAt: null }))
+      .addCase(sessionExpired, () => ({ item: null, holdEndsAt: null }))
   },
 })
 
