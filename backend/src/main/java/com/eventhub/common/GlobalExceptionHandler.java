@@ -11,12 +11,17 @@ import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
+
+import com.eventhub.auth.CurrentUser;
 
 /**
  * Turns every error into clean JSON (RFC 9457 "problem details"), e.g.
@@ -74,6 +79,29 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 	ProblemDetail handleOptimisticLock(ObjectOptimisticLockingFailureException ex) {
 		return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
 				"This record was changed by someone else. Please reload and try again.");
+	}
+
+	/** Login failed. Same message for "no such email" and "wrong password" (do not reveal which emails exist). */
+	@ExceptionHandler(BadCredentialsException.class)
+	ProblemDetail handleBadCredentials(BadCredentialsException ex) {
+		return ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, "Wrong email or password.");
+	}
+
+	@ExceptionHandler(DisabledException.class)
+	ProblemDetail handleDisabled(DisabledException ex) {
+		return ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, "This account is disabled. Please contact the admin.");
+	}
+
+	/**
+	 * @PreAuthorize said no (e.g. organizer of another club). Without this, the catch-all below
+	 * would turn it into a 500. A visitor who is not logged in gets 401, a logged-in user 403.
+	 */
+	@ExceptionHandler(AccessDeniedException.class)
+	ProblemDetail handleAccessDenied(AccessDeniedException ex) {
+		if (CurrentUser.get().isEmpty()) {
+			return ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, "Please log in first.");
+		}
+		return ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, "You do not have permission to do this.");
 	}
 
 	/** Anything unexpected: log the details, but never send the stack trace to the user. */

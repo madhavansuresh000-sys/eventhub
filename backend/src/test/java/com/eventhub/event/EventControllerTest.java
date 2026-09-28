@@ -19,6 +19,8 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.eventhub.auth.TestAccounts;
+
 /** Calls the real URLs against the Flyway sample data. Changes are rolled back. */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -27,6 +29,9 @@ class EventControllerTest {
 
 	@Autowired
 	private MockMvc mvc;
+
+	@Autowired
+	private TestAccounts accounts;
 
 	/** Phase 2 "done when" check: GET /api/events?tag=tech&page=0 returns the right events. */
 	@Test
@@ -98,7 +103,8 @@ class EventControllerTest {
 				 "totalSeats": 40, "price": 0, "tags": ["tech", "coding"]}
 				""".formatted(start, end);
 
-		mvc.perform(post("/api/events").contentType(MediaType.APPLICATION_JSON).content(body))
+		mvc.perform(post("/api/events").with(accounts.as(accounts.organizerOf(1L)))
+				.contentType(MediaType.APPLICATION_JSON).content(body))
 			.andExpect(status().isCreated())
 			.andExpect(header().string("Location", startsWith("/api/events/")))
 			.andExpect(jsonPath("$.status").value("DRAFT"))
@@ -112,11 +118,11 @@ class EventControllerTest {
 		mvc.perform(get("/api/events").param("q", "Bootcamp"))
 			.andExpect(jsonPath("$.totalElements").value(0));
 
-		mvc.perform(post("/api/events/5/submit"))
+		mvc.perform(post("/api/events/5/submit").with(accounts.as(accounts.organizerOf(1L))))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.status").value("PENDING_APPROVAL"));
 
-		mvc.perform(post("/api/events/5/approve"))
+		mvc.perform(post("/api/events/5/approve").with(accounts.as(accounts.admin())))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.status").value("PUBLISHED"));
 
@@ -129,7 +135,7 @@ class EventControllerTest {
 
 	@Test
 	void rejectFlow() throws Exception {
-		mvc.perform(post("/api/events/17/reject").contentType(MediaType.APPLICATION_JSON)
+		mvc.perform(post("/api/events/17/reject").with(accounts.as(accounts.admin())).contentType(MediaType.APPLICATION_JSON)
 				.content("{\"reason\": \"Add safety instructions for the drone flight\"}"))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.status").value("DRAFT"))

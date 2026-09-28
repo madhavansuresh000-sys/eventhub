@@ -59,4 +59,8 @@ public interface EventRepository extends JpaRepository<Event, Long>, JpaSpecific
 
 	long countByStatus(EventStatus status);
 
+	/** Just the club id of an event (for permission checks), without loading the whole event. */
+	@Query("select e.club.id from Event e where e.id = :id")
+	Optional<Long> findClubIdById(@Param("id") Long id);
+
 }

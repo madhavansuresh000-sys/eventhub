@@ -17,6 +17,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.eventhub.auth.TestAccounts;
+
 /** Every kind of mistake gets a clean JSON answer with the right status code. */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -26,8 +28,13 @@ class ErrorHandlingTest {
 	@Autowired
 	private MockMvc mvc;
 
+	@Autowired
+	private TestAccounts accounts;
+
 	private ResultActions postJson(String url, String json) throws Exception {
-		return mvc.perform(post(url).contentType(MediaType.APPLICATION_JSON).content(json));
+		// logged in as an organizer of the Coding Club (club 1), so only the input can be wrong
+		return mvc.perform(post(url).with(accounts.as(accounts.organizerOf(1L)))
+			.contentType(MediaType.APPLICATION_JSON).content(json));
 	}
 
 	/** Phase 2 "done when" check: wrong input returns a 400 error with a clear message. */
@@ -107,14 +114,15 @@ class ErrorHandlingTest {
 
 	@Test
 	void illegalWorkflowMoveIs409() throws Exception {
-		mvc.perform(post("/api/events/5/approve"))
+		mvc.perform(post("/api/events/5/approve").with(accounts.as(accounts.admin())))
 			.andExpect(status().isConflict())
 			.andExpect(jsonPath("$.detail").value("Cannot approve event 5: it is DRAFT (allowed next: [PENDING_APPROVAL])"));
 	}
 
 	@Test
 	void rejectWithoutReasonIs400() throws Exception {
-		postJson("/api/events/9/reject", "{}")
+		mvc.perform(post("/api/events/9/reject").with(accounts.as(accounts.admin()))
+				.contentType(MediaType.APPLICATION_JSON).content("{}"))
 			.andExpect(status().isBadRequest())
 			.andExpect(jsonPath("$.errors.reason").value("reason is required"));
 	}

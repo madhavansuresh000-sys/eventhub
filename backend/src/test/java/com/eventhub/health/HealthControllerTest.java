@@ -10,10 +10,11 @@ import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.web.servlet.MockMvc;
 
+import com.eventhub.auth.JwtService;
 import com.eventhub.config.SecurityConfig;
 
 @WebMvcTest(HealthController.class)
-@Import(SecurityConfig.class)
+@Import({ SecurityConfig.class, JwtService.class })
 class HealthControllerTest {
 
 	@Autowired

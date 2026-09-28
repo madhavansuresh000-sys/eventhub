@@ -13,7 +13,7 @@ import lombok.RequiredArgsConstructor;
 
 /**
  * Admin screens. Approve / reject stay at POST /api/events/{id}/approve and /reject (Phase 2).
- * Everything under /api/admin/** is locked to admins in Phase 5.
+ * Everything under /api/admin/** is ADMIN only (SecurityConfig).
  */
 @RestController
 @RequestMapping("/api/admin")

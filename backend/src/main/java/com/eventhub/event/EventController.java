@@ -5,6 +5,7 @@ import java.time.LocalDate;
 
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -55,14 +56,17 @@ public class EventController {
 		return service.getPublishedEvent(id);
 	}
 
-	/** Creates a DRAFT event. Returns 201 Created with the new event's URL. */
+	/** Creates a DRAFT event for a club you organize. Returns 201 Created with the new event's URL. */
 	@PostMapping
+	@PreAuthorize("@clubAccess.isOrganizer(#request.clubId())")
 	public ResponseEntity<EventDetailResponse> create(@Valid @RequestBody EventRequest request) {
 		EventDetailResponse created = service.create(request);
 		return ResponseEntity.created(URI.create("/api/events/" + created.id())).body(created);
 	}
 
+	/** Organizer of the event's club only; moving it to another club needs to be organizer there too. */
 	@PutMapping("/{id}")
+	@PreAuthorize("@clubAccess.canManageEvent(#id) and @clubAccess.isOrganizer(#request.clubId())")
 	public EventDetailResponse update(@PathVariable Long id, @Valid @RequestBody EventRequest request) {
 		return service.update(id, request);
 	}
@@ -71,11 +75,12 @@ public class EventController {
 
 	/** Organizer sends a DRAFT for review. */
 	@PostMapping("/{id}/submit")
+	@PreAuthorize("@clubAccess.canManageEvent(#id)")
 	public EventDetailResponse submit(@PathVariable Long id) {
 		return service.submit(id);
 	}
 
-	/** Admin publishes an event that is waiting for approval. */
+	/** Admin publishes an event that is waiting for approval (ADMIN only, see SecurityConfig). */
 	@PostMapping("/{id}/approve")
 	public EventDetailResponse approve(@PathVariable Long id) {
 		return service.approve(id);

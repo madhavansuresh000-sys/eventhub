@@ -16,6 +16,8 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.eventhub.auth.TestAccounts;
+
 /** Phase 4: the organizer and admin URLs, and CORS. Uses the Flyway sample data; changes are rolled back. */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -25,11 +27,14 @@ class OrganizerAdminControllerTest {
 	@Autowired
 	private MockMvc mvc;
 
+	@Autowired
+	private TestAccounts accounts;
+
 	// ---------- organizer ----------
 
 	@Test
 	void organizerSeesDraftsTooSoonestFirst() throws Exception {
-		mvc.perform(get("/api/organizer/clubs/1/events"))
+		mvc.perform(get("/api/organizer/clubs/1/events").with(accounts.as(accounts.organizerOf(1L))))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.length()").value(5))
 			.andExpect(jsonPath("$[0].title").value("Intro to Git and GitHub"))
@@ -38,14 +43,16 @@ class OrganizerAdminControllerTest {
 	}
 
 	@Test
-	void unknownClubIs404() throws Exception {
-		mvc.perform(get("/api/organizer/clubs/999/events")).andExpect(status().isNotFound());
+	void unknownClubIs403() throws Exception {
+		// not an organizer of club 999 (it does not even exist): refused before looking
+		mvc.perform(get("/api/organizer/clubs/999/events").with(accounts.as(accounts.organizerOf(1L))))
+			.andExpect(status().isForbidden());
 	}
 
 	@Test
 	void draftIsHiddenFromThePublicButNotFromTheOrganizer() throws Exception {
 		mvc.perform(get("/api/events/5")).andExpect(status().isNotFound());
-		mvc.perform(get("/api/organizer/events/5"))
+		mvc.perform(get("/api/organizer/events/5").with(accounts.as(accounts.organizerOf(1L))))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.status").value("DRAFT"))
 			.andExpect(jsonPath("$.club.id").value(1));
@@ -55,7 +62,7 @@ class OrganizerAdminControllerTest {
 
 	@Test
 	void pendingQueueSoonestFirst() throws Exception {
-		mvc.perform(get("/api/admin/events/pending"))
+		mvc.perform(get("/api/admin/events/pending").with(accounts.as(accounts.admin())))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.length()").value(2))
 			.andExpect(jsonPath("$[0].title").value("Street Play Festival"))
@@ -65,15 +72,15 @@ class OrganizerAdminControllerTest {
 
 	@Test
 	void approvingRemovesTheEventFromTheQueue() throws Exception {
-		mvc.perform(post("/api/events/9/approve")).andExpect(status().isOk());
-		mvc.perform(get("/api/admin/events/pending"))
+		mvc.perform(post("/api/events/9/approve").with(accounts.as(accounts.admin()))).andExpect(status().isOk());
+		mvc.perform(get("/api/admin/events/pending").with(accounts.as(accounts.admin())))
 			.andExpect(jsonPath("$.length()").value(1))
 			.andExpect(jsonPath("$[0].id").value(17));
 	}
 
 	@Test
 	void clubStatsOneRowPerClub() throws Exception {
-		mvc.perform(get("/api/admin/stats/clubs"))
+		mvc.perform(get("/api/admin/stats/clubs").with(accounts.as(accounts.admin())))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.length()").value(5))
 			.andExpect(jsonPath("$[0].clubName").value("Coding Club"))
