@@ -28,7 +28,7 @@ class HealthControllerTest {
 
 	@Test
 	void otherUrlsNeedLogin() throws Exception {
-		mockMvc.perform(get("/api/events"))
+		mockMvc.perform(get("/api/admin/stats"))
 			.andExpect(status().isUnauthorized());
 	}
 

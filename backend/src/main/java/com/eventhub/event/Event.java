@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -89,8 +90,9 @@ public class Event {
 	@Column(nullable = false)
 	private int version;
 
-	/** Many-to-Many: tags via the event_tags table. */
+	/** Many-to-Many: tags via the event_tags table (loaded 50 events at a time). */
 	@ManyToMany
+	@BatchSize(size = 50)
 	@JoinTable(name = "event_tags",
 			joinColumns = @JoinColumn(name = "event_id"),
 			inverseJoinColumns = @JoinColumn(name = "tag_id"))

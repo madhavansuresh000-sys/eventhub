@@ -2,19 +2,28 @@ package com.eventhub.event;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.eventhub.club.Club;
 import com.eventhub.club.ClubRepository;
+import com.eventhub.common.BadRequestException;
 import com.eventhub.common.BusinessRuleException;
+import com.eventhub.common.PageResponse;
 import com.eventhub.common.ResourceNotFoundException;
 import com.eventhub.event.dto.EventDetailResponse;
+import com.eventhub.event.dto.EventFilter;
 import com.eventhub.event.dto.EventMapper;
 import com.eventhub.event.dto.EventRequest;
+import com.eventhub.event.dto.EventSummaryResponse;
 import com.eventhub.tag.Tag;
 import com.eventhub.tag.TagRepository;
 
@@ -34,6 +43,53 @@ public class EventService {
 
 	private final TagRepository tags;
 
+	/** Sort options the API accepts, mapped to entity fields. */
+	private static final Map<String, String> SORT_FIELDS = Map.of(
+			"date", "startTime",
+			"price", "price",
+			"title", "title");
+
+	static final int MAX_PAGE_SIZE = 50;
+
+	/** Public list: only PUBLISHED events, with optional filters, sort and pages. */
+	@Transactional(readOnly = true)
+	public PageResponse<EventSummaryResponse> search(EventFilter filter, int page, int size, String sort, String dir) {
+		if (page < 0) {
+			throw new BadRequestException("page must be 0 or more");
+		}
+		if (size < 1 || size > MAX_PAGE_SIZE) {
+			throw new BadRequestException("size must be between 1 and " + MAX_PAGE_SIZE);
+		}
+		if (filter.from() != null && filter.to() != null && filter.to().isBefore(filter.from())) {
+			throw new BadRequestException("to must be on or after from");
+		}
+		String field = SORT_FIELDS.get(sort);
+		if (field == null) {
+			throw new BadRequestException("sort must be one of: date, price, title");
+		}
+		Sort.Direction direction = switch (dir.toLowerCase()) {
+			case "asc" -> Sort.Direction.ASC;
+			case "desc" -> Sort.Direction.DESC;
+			default -> throw new BadRequestException("dir must be asc or desc");
+		};
+
+		// id as a tie-breaker keeps the order stable between pages
+		Pageable pageable = PageRequest.of(page, size, Sort.by(direction, field).and(Sort.by("id")));
+		Page<Event> result = events.findAll(EventSpecifications.publishedMatching(filter), pageable);
+		return PageResponse.from(result, EventMapper::toSummary);
+	}
+
+	/** Public details: drafts and events under review are hidden (404). */
+	@Transactional(readOnly = true)
+	public EventDetailResponse getPublishedEvent(Long id) {
+		Event event = findEvent(id);
+		if (event.getStatus() != EventStatus.PUBLISHED) {
+			throw new ResourceNotFoundException("Event", id);
+		}
+		return EventMapper.toDetail(event);
+	}
+
+	/** Any status (for organizers and admins). */
 	@Transactional(readOnly = true)
 	public EventDetailResponse getEvent(Long id) {
 		return EventMapper.toDetail(findEvent(id));
