@@ -1,11 +1,9 @@
-import { useCallback, useMemo, useState } from 'react'
-import { useSelector } from 'react-redux'
+import { useCallback, useState } from 'react'
 
 import QrCamera from '../components/scanner/QrCamera'
 import Button from '../components/ui/Button'
 import Card from '../components/ui/Card'
 import { currentVolunteer, gateEvents, gateTickets, tryCodes } from '../data/sampleGate'
-import { selectStudent, selectTickets } from '../store/studentSlice'
 import { formatTime } from '../utils/format'
 
 /**
@@ -59,8 +57,6 @@ function ResultPanel({ result }) {
 }
 
 export default function ScannerPage() {
-  const myTickets = useSelector(selectTickets)
-  const student = useSelector(selectStudent)
   const [eventId, setEventId] = useState(gateEvents[0].id)
   const [code, setCode] = useState('')
   const [useCamera, setUseCamera] = useState(false)
@@ -68,13 +64,8 @@ export default function ScannerPage() {
   const [checkIns, setCheckIns] = useState({}) // code -> time it was let in
   const [log, setLog] = useState([])
 
-  // the gate list + tickets booked in this browser at checkout (so you can scan your own booking)
-  const tickets = useMemo(() => [
-    ...gateTickets,
-    ...myTickets
-      .filter((t) => t.eventId && !gateTickets.some((g) => g.code === t.code))
-      .map((t) => ({ code: t.code, eventId: t.eventId, holder: student.name, quantity: t.quantity, status: t.status === 'CANCELLED' ? 'CANCELLED' : 'CONFIRMED' })),
-  ], [myTickets, student.name])
+  // sample gate list until Phase 7 (then the server checks real tickets)
+  const tickets = gateTickets
 
   const event = gateEvents.find((e) => e.id === eventId)
   const admitted = tickets

@@ -1,29 +1,35 @@
 import { QRCodeSVG } from 'qrcode.react'
 import { useSelector } from 'react-redux'
-import { Link, useParams, useSearchParams } from 'react-router-dom'
+import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom'
+
+import { fetchBooking, toTicket } from '../api/bookings'
 
 import { Notice } from '../components/auth/AuthCard'
 import TicketStatusBadge from '../components/tickets/TicketStatusBadge'
 import Button from '../components/ui/Button'
 import EmptyState from '../components/ui/EmptyState'
 import { ArrowLeftIcon, CalendarIcon, MapPinIcon, TicketIcon } from '../components/ui/icons'
-import { selectStudent, selectTickets } from '../store/studentSlice'
+import { Skeleton } from '../components/ui/Loader'
+import useAsync, { describeError } from '../hooks/useAsync'
+import { selectStudent } from '../store/studentSlice'
 import { formatLongDate, formatPrice, formatTime, gradientFor } from '../utils/format'
 
 /** The e-ticket with the QR code that volunteers scan at the gate (sketch 4 -> "Show QR ticket"). */
 export default function TicketPage() {
   const { id } = useParams()
   const [params] = useSearchParams()
-  const tickets = useSelector(selectTickets)
   const student = useSelector(selectStudent)
-  const ticket = tickets.find((t) => t.id === id)
+  const { data, loading, error } = useAsync(() => fetchBooking(id), [id])
 
-  if (!ticket) {
-    return <EmptyState title="Ticket not found" message="It may belong to another account."
+  if (loading) return <Skeleton className="mx-auto h-96 max-w-3xl" />
+  if (error) {
+    return <EmptyState title="Ticket not found" message={describeError(error).message}
       action={<Button to="/my-tickets" variant="secondary">My tickets</Button>} />
   }
+  const ticket = toTicket(data)
+  if (ticket.status === 'HELD') return <Navigate to={`/checkout/${ticket.id}`} replace /> // not paid yet: no ticket
 
-  const cancelled = ticket.status === 'CANCELLED'
+  const cancelled = ticket.status === 'CANCELLED' || ticket.status === 'EXPIRED'
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -54,7 +60,7 @@ export default function TicketPage() {
             </p>
             <p className="flex items-center gap-3 text-slate-700 dark:text-slate-300">
               <TicketIcon className="h-5 w-5 shrink-0 text-brand-600 dark:text-brand-400" />
-              Admits <strong>{ticket.quantity}</strong> · {formatPrice(ticket.price * ticket.quantity)}
+              Admits <strong>{ticket.quantity}</strong> · {formatPrice(ticket.amount)}
             </p>
             <dl className="grid grid-cols-2 gap-3 border-t border-dashed border-slate-300 pt-4 text-sm dark:border-slate-700">
               <div><dt className="text-slate-500">Name</dt><dd className="font-medium text-slate-900 dark:text-white">{student.name}</dd></div>
@@ -68,7 +74,7 @@ export default function TicketPage() {
               <QRCodeSVG value={ticket.code} size={168} level="M" title={`QR code for ticket ${ticket.code}`} />
             </div>
             <p className="font-mono text-sm font-semibold tracking-wider text-slate-700 dark:text-slate-300">{ticket.code}</p>
-            {cancelled && <p className="text-sm font-semibold text-red-600">This ticket was cancelled</p>}
+            {cancelled && <p className="text-sm font-semibold text-red-600">This ticket is not valid ({ticket.status.toLowerCase()})</p>}
             {ticket.status === 'ATTENDED' && <p className="text-sm font-semibold text-brand-600 dark:text-brand-400">✓ Checked in at the gate</p>}
           </div>
         </div>
@@ -76,7 +82,6 @@ export default function TicketPage() {
 
       <div className="mt-6 flex flex-wrap justify-center gap-3 print:hidden">
         {!cancelled && <Button onClick={() => window.print()}>Print / save as PDF</Button>}
-        {ticket.certificateId && <Button to={`/certificates/${ticket.certificateId}`} variant="secondary">View certificate</Button>}
         <Button to="/my-tickets" variant="ghost">All my tickets</Button>
       </div>
     </div>

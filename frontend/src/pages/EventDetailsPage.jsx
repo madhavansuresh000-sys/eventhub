@@ -1,5 +1,8 @@
 import { useState } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
 import { Link, useNavigate, useParams } from 'react-router-dom'
+
+import { holdSeats } from '../api/bookings'
 
 import { fetchEvent } from '../api/events'
 import EventPoster from '../components/events/EventPoster'
@@ -11,6 +14,8 @@ import EmptyState from '../components/ui/EmptyState'
 import { ArrowLeftIcon, CalendarIcon, MapPinIcon, UsersIcon } from '../components/ui/icons'
 import { Skeleton } from '../components/ui/Loader'
 import useAsync, { describeError } from '../hooks/useAsync'
+import { selectUser } from '../store/authSlice'
+import { seatsHeld } from '../store/cartSlice'
 import { formatLongDate, formatPrice, formatTimeRange } from '../utils/format'
 
 const MAX_TICKETS = 10
@@ -30,9 +35,36 @@ function Stepper({ value, max, onChange }) {
 
 function BookingBox({ event }) {
   const navigate = useNavigate()
+  const dispatch = useDispatch()
+  const user = useSelector(selectUser)
   const [qty, setQty] = useState(1)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState(null)
   const max = Math.min(event.availableSeats, MAX_TICKETS)
   const total = Number(event.price) * qty
+  const free = Number(event.price) === 0
+
+  /** POST /api/bookings: the SERVER takes the seats (or says why not: sold out, already booked ...). */
+  const book = async () => {
+    if (!user) {
+      navigate(`/login?next=${encodeURIComponent(`/events/${event.id}`)}`)
+      return
+    }
+    setBusy(true)
+    setError(null)
+    try {
+      const booking = await holdSeats(event.id, qty)
+      if (booking.status === 'CONFIRMED') {
+        navigate(`/tickets/${booking.id}?new=1`) // free event: done at once
+      } else {
+        dispatch(seatsHeld(booking)) // navbar countdown
+        navigate(`/checkout/${booking.id}`)
+      }
+    } catch (e) {
+      setError(describeError(e).message)
+      setBusy(false)
+    }
+  }
 
   return (
     <Card className="space-y-5 p-6 lg:sticky lg:top-24">
@@ -61,10 +93,17 @@ function BookingBox({ event }) {
             <span className="text-slate-600 dark:text-slate-400">Total</span>
             <span className="text-xl font-bold text-slate-900 dark:text-white">{formatPrice(total)}</span>
           </div>
-          <Button size="lg" className="w-full" onClick={() => navigate(`/checkout/${event.id}?qty=${qty}`)}>
-            Book now
+          {error && (
+            <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-800 dark:bg-red-950/40 dark:text-red-300">{error}</p>
+          )}
+          <Button size="lg" className="w-full" onClick={book} disabled={busy}>
+            {busy ? 'Holding your seats…' : free ? 'Book free seats' : 'Book now'}
           </Button>
-          <p className="text-center text-xs text-slate-500">Your seats are held for 10 minutes while you pay.</p>
+          <p className="text-center text-xs text-slate-500">
+            {!user ? 'You will be asked to log in first.'
+              : free ? 'Free event: your ticket is ready at once.'
+              : 'Your seats are held for 10 minutes while you pay.'}
+          </p>
         </>
       )}
     </Card>

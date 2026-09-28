@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
 
-import { fetchEvent } from '../api/events'
+import { cancelBooking, fetchBooking, payBooking } from '../api/bookings'
 import { Notice } from '../components/auth/AuthCard'
 import EventPoster from '../components/events/EventPoster'
 import Button from '../components/ui/Button'
@@ -11,22 +11,10 @@ import EmptyState from '../components/ui/EmptyState'
 import { Skeleton } from '../components/ui/Loader'
 import useAsync, { describeError } from '../hooks/useAsync'
 import useCountdown, { formatClock } from '../hooks/useCountdown'
-import { cartCleared, HOLD_MINUTES, seatsHeld, selectCart } from '../store/cartSlice'
-import { selectStudent, ticketsBooked } from '../store/studentSlice'
+import { cartCleared, seatsHeld } from '../store/cartSlice'
+import { notify } from '../store/notificationsSlice'
+import { selectStudent } from '../store/studentSlice'
 import { formatPrice, formatShortDate } from '../utils/format'
-
-/** The event fields a ticket needs, plus how many seats. This is what goes into the cart. */
-const cartItemFor = (event, quantity) => ({
-  eventId: event.id, title: event.title, clubName: event.club.name, clubSlug: event.club.slug,
-  venue: event.venue, startTime: event.startTime, tags: event.tags, price: Number(event.price), quantity,
-})
-const wait = (ms) => new Promise((r) => setTimeout(r, ms))
-
-const paymentMethods = [
-  { value: 'upi', label: 'UPI', hint: 'GPay, PhonePe, Paytm' },
-  { value: 'card', label: 'Debit / credit card', hint: 'Visa, Mastercard, RuPay' },
-  { value: 'venue', label: 'Pay at the venue', hint: 'Cash or UPI at the gate' },
-]
 
 function HoldTimer({ secondsLeft }) {
   const urgent = secondsLeft <= 60
@@ -49,46 +37,54 @@ function HoldTimer({ secondsLeft }) {
   )
 }
 
-function Checkout({ event, quantity }) {
+/** A HELD booking: countdown (from the server), student details, order summary, Pay. */
+function Checkout({ booking }) {
   const navigate = useNavigate()
   const dispatch = useDispatch()
   const student = useSelector(selectStudent)
-  const cart = useSelector(selectCart)
-  const [method, setMethod] = useState('upi')
-  const [paying, setPaying] = useState(false)
+  // the server says how many seconds are left; count down from there on this computer
+  const [endsAt] = useState(() => Date.now() + booking.secondsLeft * 1000)
+  const secondsLeft = useCountdown(endsAt)
+  const [busy, setBusy] = useState(null) // 'pay' | 'release' | null
+  const [error, setError] = useState(null)
+  const { event } = booking
 
-  // Same event and quantity already in the cart? Keep that hold (and its timer). Otherwise hold new seats.
-  const held = cart.item?.eventId === event.id && cart.item.quantity === quantity
   useEffect(() => {
-    if (!held && !paying) dispatch(seatsHeld(cartItemFor(event, quantity)))
-  }, [held, paying, event, quantity, dispatch])
-  const secondsLeft = useCountdown(cart.holdEndsAt ?? 0)
+    dispatch(seatsHeld(booking)) // navbar countdown on other pages
+  }, [booking, dispatch])
 
-  const free = Number(event.price) === 0
-  const total = Number(event.price) * quantity
-
+  /** POST /api/bookings/{id}/pay -> the server opens a checkout; we go to that page (Stripe, or the dev test page). */
   const pay = async () => {
-    setPaying(true)
-    await wait(1200) // Phase 6: POST /api/bookings, then the payment gateway
-    // the action creator's "prepare" made the ticket id; dispatch returns the action
-    const { payload: ticket } = dispatch(ticketsBooked(cart.item, quantity))
-    dispatch(cartCleared())
-    navigate(`/tickets/${ticket.id}?new=1`)
+    setBusy('pay')
+    setError(null)
+    try {
+      const { redirectUrl } = await payBooking(booking.id)
+      window.location.assign(redirectUrl) // leaves our app (Stripe) - the store is rebuilt when we come back
+    } catch (e) {
+      setError(describeError(e).message)
+      setBusy(null)
+    }
   }
 
-  if (!held && !paying) return <Skeleton className="h-96 w-full" />
+  const release = async () => {
+    setBusy('release')
+    try {
+      await cancelBooking(booking.id)
+      dispatch(cartCleared())
+      dispatch(notify('Your seats were released.'))
+      navigate(`/events/${event.id}`)
+    } catch (e) {
+      setError(describeError(e).message)
+      setBusy(null)
+    }
+  }
 
-  if (secondsLeft === 0 && !paying) {
+  if (secondsLeft === 0 && !busy) {
     return (
       <EmptyState
         title="Your seat hold expired"
-        message={`We held ${quantity} seat${quantity > 1 ? 's' : ''} for ${HOLD_MINUTES} minutes. They are now free for other students.`}
-        action={
-          <div className="flex gap-3">
-            <Button onClick={() => dispatch(seatsHeld(cartItemFor(event, quantity)))}>Hold seats again</Button>
-            <Button to={`/events/${event.id}`} variant="secondary">Back to event</Button>
-          </div>
-        }
+        message={`We held ${booking.quantity} seat${booking.quantity > 1 ? 's' : ''} for 10 minutes. They are now free for other students.`}
+        action={<Button to={`/events/${event.id}`}>Book again</Button>}
       />
     )
   }
@@ -108,43 +104,26 @@ function Checkout({ event, quantity }) {
           <p className="mt-3 text-xs text-slate-500">Your tickets are sent to this email.</p>
         </Card>
 
-        {!free && (
-          <Card as="fieldset" className="p-6">
-            <legend className="sr-only">Payment method</legend>
-            <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Payment method</h2>
-            <div className="mt-4 space-y-3">
-              {paymentMethods.map((m) => (
-                <label key={m.value}
-                  className={'flex cursor-pointer items-center gap-3 rounded-lg border p-3 ' +
-                    (method === m.value ? 'border-brand-500 bg-brand-50 dark:bg-slate-800' : 'border-slate-200 dark:border-slate-700')}>
-                  <input type="radio" name="method" value={m.value} checked={method === m.value}
-                    onChange={() => setMethod(m.value)} className="h-4 w-4 accent-brand-600" />
-                  <span>
-                    <span className="block font-medium text-slate-900 dark:text-white">{m.label}</span>
-                    <span className="block text-xs text-slate-500">{m.hint}</span>
-                  </span>
-                </label>
-              ))}
-            </div>
-          </Card>
-        )}
-
-        <Notice>Demo checkout: no money is taken. Real booking and payment arrive in Phase 6.</Notice>
+        <Notice>
+          You pay on a secure payment page (Stripe test mode in development: no real money).
+          Card, UPI and other methods are chosen there. Your card details never reach EventHub.
+        </Notice>
+        {error && <p role="alert" className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-800 dark:bg-red-950/40 dark:text-red-300">{error}</p>}
       </div>
 
       <aside>
         <Card className="overflow-hidden lg:sticky lg:top-24">
-          <EventPoster clubSlug={event.club.slug} tags={event.tags} className="h-28" emojiSize="text-4xl" />
+          <EventPoster clubSlug={event.clubSlug} tags={event.tags} className="h-28" emojiSize="text-4xl" />
           <div className="space-y-4 p-6">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-brand-600 dark:text-brand-400">{event.club.name}</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-brand-600 dark:text-brand-400">{event.clubName}</p>
               <h2 className="text-lg font-bold text-slate-900 dark:text-white">{event.title}</h2>
               <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">{formatShortDate(event.startTime)} · {event.venue}</p>
             </div>
             <div className="space-y-2 border-t border-slate-200 pt-4 text-sm dark:border-slate-800">
               <div className="flex justify-between">
-                <span className="text-slate-600 dark:text-slate-400">{quantity} × {formatPrice(event.price)}</span>
-                <span className="text-slate-900 dark:text-white">{formatPrice(total)}</span>
+                <span className="text-slate-600 dark:text-slate-400">{booking.quantity} × {formatPrice(event.price)}</span>
+                <span className="text-slate-900 dark:text-white">{formatPrice(booking.amount)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-600 dark:text-slate-400">Booking fee</span>
@@ -152,13 +131,16 @@ function Checkout({ event, quantity }) {
               </div>
               <div className="flex justify-between border-t border-slate-200 pt-2 text-base font-bold dark:border-slate-800">
                 <span className="text-slate-900 dark:text-white">Total</span>
-                <span className="text-slate-900 dark:text-white">{formatPrice(total)}</span>
+                <span className="text-slate-900 dark:text-white">{formatPrice(booking.amount)}</span>
               </div>
             </div>
-            <Button size="lg" className="w-full" onClick={pay} disabled={paying}>
-              {paying ? 'Confirming…' : free ? 'Confirm free booking' : `Pay ${formatPrice(total)}`}
+            <Button size="lg" className="w-full" onClick={pay} disabled={Boolean(busy)}>
+              {busy === 'pay' ? 'Opening the payment page…' : `Pay ${formatPrice(booking.amount)}`}
             </Button>
-            <Link to={`/events/${event.id}`} className="block py-1 text-center text-sm text-slate-500 hover:underline">Change tickets</Link>
+            <button type="button" onClick={release} disabled={Boolean(busy)}
+              className="block w-full py-1 text-center text-sm text-slate-500 hover:underline disabled:opacity-50">
+              {busy === 'release' ? 'Releasing…' : 'Release my seats'}
+            </button>
           </div>
         </Card>
       </aside>
@@ -166,28 +148,37 @@ function Checkout({ event, quantity }) {
   )
 }
 
+/** /checkout/:bookingId - loads the booking from the server and shows the right screen for its status. */
 export default function CheckoutPage() {
-  const { eventId } = useParams()
-  const [params] = useSearchParams()
-  const { data: event, loading, error } = useAsync(() => fetchEvent(eventId), [eventId])
+  const { bookingId } = useParams()
+  const dispatch = useDispatch()
+  const { data: booking, loading, error } = useAsync(() => fetchBooking(bookingId), [bookingId])
+
+  // not held any more (paid, expired, cancelled): the navbar countdown must go
+  useEffect(() => {
+    if (booking && booking.status !== 'HELD') dispatch(cartCleared())
+  }, [booking, dispatch])
 
   if (loading) return <Skeleton className="h-96 w-full" />
   if (error) {
-    return <EmptyState title="Could not start checkout" message={describeError(error).message}
-      action={<Button to="/events" variant="secondary">Browse events</Button>} />
+    return <EmptyState title="Booking not found" message={describeError(error).message}
+      action={<Button to="/my-tickets" variant="secondary">My tickets</Button>} />
   }
-  if (event.soldOut) {
-    return <EmptyState title={`${event.title} is sold out`} message="Join the waitlist and we will offer you a seat if someone cancels."
-      action={<Button to={`/waitlist?event=${event.id}`}>Join waitlist</Button>} />
+  if (booking.status === 'CONFIRMED') return <Navigate to={`/tickets/${booking.id}`} replace />
+  if (booking.status !== 'HELD') {
+    return <EmptyState
+      title={booking.status === 'EXPIRED' ? 'Your seat hold expired' : 'This booking was cancelled'}
+      message="The seats are free again for other students."
+      action={<Button to={`/events/${booking.event.id}`}>Book again</Button>} />
   }
-
-  const asked = Number(params.get('qty')) || 1
-  const quantity = Math.max(1, Math.min(asked, 10, event.availableSeats))
 
   return (
     <div>
       <h1 className="mb-6 text-3xl font-bold text-slate-900 dark:text-white">Checkout</h1>
-      <Checkout event={event} quantity={quantity} />
+      <Checkout booking={booking} />
+      <p className="mt-6 text-xs text-slate-500">
+        <Link to="/my-tickets" className="underline">My tickets</Link> shows this booking as "waiting for payment" until you pay.
+      </p>
     </div>
   )
 }

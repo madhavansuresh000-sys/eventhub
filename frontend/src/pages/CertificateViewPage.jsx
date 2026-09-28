@@ -4,7 +4,8 @@ import { useParams } from 'react-router-dom'
 
 import Button from '../components/ui/Button'
 import EmptyState from '../components/ui/EmptyState'
-import { selectStudent, selectTickets } from '../store/studentSlice'
+import { sampleAttended } from '../data/sampleStudent'
+import { selectStudent } from '../store/studentSlice'
 import { formatLongDate } from '../utils/format'
 
 /**
@@ -13,9 +14,8 @@ import { formatLongDate } from '../utils/format'
  */
 export default function CertificateViewPage() {
   const { id } = useParams()
-  const tickets = useSelector(selectTickets)
   const student = useSelector(selectStudent)
-  const ticket = tickets.find((t) => t.certificateId === id && t.status === 'ATTENDED')
+  const ticket = sampleAttended.find((t) => t.certificateId === id) // sample until Phase 7
 
   if (!ticket) {
     return <EmptyState title="Certificate not found" message="Check the certificate ID."

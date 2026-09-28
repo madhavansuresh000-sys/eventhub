@@ -21,8 +21,10 @@ import HomePage from './pages/HomePage'
 import LoginPage from './pages/LoginPage'
 import MyTicketsPage from './pages/MyTicketsPage'
 import NotFoundPage from './pages/NotFoundPage'
+import PaymentResultPage from './pages/PaymentResultPage'
 import RegisterPage from './pages/RegisterPage'
 import ScannerPage from './pages/ScannerPage'
+import TestPaymentPage from './pages/TestPaymentPage'
 import TicketPage from './pages/TicketPage'
 import WaitlistPage from './pages/WaitlistPage'
 import StyleGuidePage from './pages/StyleGuidePage'
@@ -38,7 +40,10 @@ export default function App() {
         <Route path="clubs/:slug" element={<ClubPage />} />
         {/* any logged-in user (students book tickets) */}
         <Route element={<RequireAuth />}>
-          <Route path="checkout/:eventId" element={<CheckoutPage />} />
+          <Route path="checkout/:bookingId" element={<CheckoutPage />} />
+          <Route path="test-payment/:sessionId" element={<TestPaymentPage />} />
+          <Route path="payment/success" element={<PaymentResultPage result="success" />} />
+          <Route path="payment/cancelled" element={<PaymentResultPage result="cancelled" />} />
           <Route path="my-tickets" element={<MyTicketsPage />} />
           <Route path="tickets/:id" element={<TicketPage />} />
           <Route path="waitlist" element={<WaitlistPage />} />

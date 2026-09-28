@@ -50,10 +50,11 @@ function SeatHoldPill() {
   const { item, holdEndsAt } = useSelector(selectCart)
   const secondsLeft = useCountdown(holdEndsAt ?? 0)
   const location = useLocation()
-  if (!item || secondsLeft === 0 || location.pathname.startsWith('/checkout')) return null
+  const paying = ['/checkout', '/test-payment', '/payment'].some((p) => location.pathname.startsWith(p))
+  if (!item || secondsLeft === 0 || paying) return null
   return (
     <Link
-      to={`/checkout/${item.eventId}?qty=${item.quantity}`}
+      to={`/checkout/${item.bookingId}`}
       className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-900 hover:bg-amber-200 dark:bg-amber-900/50 dark:text-amber-200"
       title={`${item.quantity} seat(s) held for ${item.title}`}
     >

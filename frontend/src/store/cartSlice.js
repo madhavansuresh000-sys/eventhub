@@ -2,25 +2,30 @@ import { createSlice } from '@reduxjs/toolkit'
 
 import { logout, sessionExpired } from './authSlice'
 
-export const HOLD_MINUTES = 10
-
 /**
- * The "cart" of EventHub: the seats a student is about to book, and until when they are held.
- * Kept in the store (not in the Checkout page), so the timer keeps running if the student
- * looks at another page and comes back. Phase 6 makes the hold real on the server.
+ * The "cart" of EventHub: a copy of the student's HELD booking (the real hold lives on the server,
+ * Phase 6), so the navbar can show the countdown on every page and lead back to checkout.
  */
 const cartSlice = createSlice({
   name: 'cart',
   initialState: { item: null, holdEndsAt: null },
   reducers: {
     seatsHeld: {
-      /** item: the event fields a ticket needs + quantity */
       reducer: (state, action) => {
         state.item = action.payload.item
         state.holdEndsAt = action.payload.holdEndsAt
       },
-      // "prepare" runs before the reducer: the place for Date.now(), since reducers must be pure
-      prepare: (item) => ({ payload: { item, holdEndsAt: Date.now() + HOLD_MINUTES * 60 * 1000 } }),
+      /**
+       * booking = the server's answer. Its secondsLeft was counted by the SERVER, so we add it to this
+       * computer's clock: the countdown is right even if the student's clock is a few minutes wrong.
+       * ("prepare" runs before the reducer: the place for Date.now(), since reducers must be pure.)
+       */
+      prepare: (booking) => ({
+        payload: {
+          item: { bookingId: booking.id, eventId: booking.event.id, title: booking.event.title, quantity: booking.quantity },
+          holdEndsAt: Date.now() + booking.secondsLeft * 1000,
+        },
+      }),
     },
     cartCleared: (state) => {
       state.item = null
