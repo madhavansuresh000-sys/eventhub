@@ -4,6 +4,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,6 +18,7 @@ import com.eventhub.auth.dto.MeResponse;
 import com.eventhub.auth.dto.RegisterRequest;
 import com.eventhub.user.User;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 
 import lombok.RequiredArgsConstructor;
@@ -38,6 +40,8 @@ public class AuthController {
 
 	private final AuthCookies cookies;
 
+	private final LoginAttemptService loginAttempts;
+
 	/** Creates a STUDENT account and logs it in straight away. 201 + cookie. */
 	@PostMapping("/register")
 	public ResponseEntity<MeResponse> register(@Valid @RequestBody RegisterRequest request) {
@@ -48,11 +52,21 @@ public class AuthController {
 	/**
 	 * Spring Security checks the password (BCrypt). Wrong email or password -> 401 with the SAME
 	 * message for both, so nobody can find out which emails have accounts.
+	 * 5 wrong passwords in a row -> locked for 15 minutes (429), see LoginAttemptService.
 	 */
 	@PostMapping("/login")
-	public ResponseEntity<MeResponse> login(@Valid @RequestBody LoginRequest request) {
+	public ResponseEntity<MeResponse> login(@Valid @RequestBody LoginRequest request, HttpServletRequest http) {
 		String email = AuthService.normalizeEmail(request.email());
-		authenticationManager.authenticate(UsernamePasswordAuthenticationToken.unauthenticated(email, request.password()));
+		String address = http.getRemoteAddr();
+		loginAttempts.checkAllowed(email, address);
+		try {
+			authenticationManager.authenticate(UsernamePasswordAuthenticationToken.unauthenticated(email, request.password()));
+		}
+		catch (BadCredentialsException ex) {
+			loginAttempts.failed(email, address);
+			throw ex;
+		}
+		loginAttempts.succeeded(email, address);
 		return withLoginCookie(HttpStatus.OK, authService.findForToken(email));
 	}
 

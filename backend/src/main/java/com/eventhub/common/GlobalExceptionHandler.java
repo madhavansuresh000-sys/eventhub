@@ -22,6 +22,7 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 import com.eventhub.auth.CurrentUser;
+import com.eventhub.auth.TooManyLoginAttemptsException;
 
 /**
  * Turns every error into clean JSON (RFC 9457 "problem details"), e.g.
@@ -85,6 +86,14 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 	@ExceptionHandler(BadCredentialsException.class)
 	ProblemDetail handleBadCredentials(BadCredentialsException ex) {
 		return ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, "Wrong email or password.");
+	}
+
+	/** 429 + Retry-After header (seconds), the standard way to say "slow down". */
+	@ExceptionHandler(TooManyLoginAttemptsException.class)
+	ResponseEntity<ProblemDetail> handleTooManyLogins(TooManyLoginAttemptsException ex) {
+		return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+			.header(HttpHeaders.RETRY_AFTER, String.valueOf(ex.getRetryAfter().toSeconds()))
+			.body(ProblemDetail.forStatusAndDetail(HttpStatus.TOO_MANY_REQUESTS, ex.getMessage()));
 	}
 
 	@ExceptionHandler(DisabledException.class)
