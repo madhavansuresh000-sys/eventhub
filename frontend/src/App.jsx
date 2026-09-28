@@ -2,16 +2,16 @@ import { Route, Routes } from 'react-router-dom'
 
 import Layout from './components/layout/Layout'
 import AboutPage from './pages/AboutPage'
+import ClubPage from './pages/ClubPage'
 import ComingSoonPage from './pages/ComingSoonPage'
+import EventDetailsPage from './pages/EventDetailsPage'
+import EventsPage from './pages/EventsPage'
 import HomePage from './pages/HomePage'
 import NotFoundPage from './pages/NotFoundPage'
 import StyleGuidePage from './pages/StyleGuidePage'
 
 /** Pages still to build, with the Phase 3 step that builds them. */
 const upcoming = [
-  { path: '/events', title: 'All events', step: 4, description: 'Filter sidebar, search and pages.' },
-  { path: '/events/:id', title: 'Event details', step: 4, description: 'Poster, details and the Book Now box.' },
-  { path: '/clubs/:slug', title: 'Club page', step: 4, description: "A club's story and its events." },
   { path: '/login', title: 'Login', step: 5, description: 'Email and password with form checks.' },
   { path: '/register', title: 'Register', step: 5, description: 'Create a student account.' },
   { path: '/checkout/:eventId', title: 'Checkout', step: 6, description: 'Your seat is held for 10 minutes.' },
@@ -33,6 +33,9 @@ export default function App() {
     <Routes>
       <Route element={<Layout />}>
         <Route index element={<HomePage />} />
+        <Route path="events" element={<EventsPage />} />
+        <Route path="events/:id" element={<EventDetailsPage />} />
+        <Route path="clubs/:slug" element={<ClubPage />} />
         <Route path="about" element={<AboutPage />} />
         <Route path="style-guide" element={<StyleGuidePage />} />
         {upcoming.map((p) => (
