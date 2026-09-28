@@ -38,10 +38,15 @@ Phase_0 … Phase_9/     Checklist for each phase
    - Health: http://localhost:8080/api/health
    - API docs: http://localhost:8080/swagger-ui.html
 3. **Frontend:** in `frontend/` run `npm install` (first time) and `npm run dev`, then open http://localhost:5173
+4. **Try the API in Postman:** Import → `postman/EventHub.postman_collection.json` → Run collection (25 requests with checks)
+
+Automated tests (`mvnw test`) use a separate database, `eventhub_test`, so your own data never breaks them.
 
 ## Status
 ![CI](https://github.com/madhavansuresh000-sys/eventhub/actions/workflows/ci.yml/badge.svg)
 
 ✅ Phase 1: Creating the project — complete (28 Sep 2026). Sketches: `docs/sketches/`
 
-🚧 Next: Phase 2 — Backend
+✅ Phase 2: Backend — complete (28 Sep 2026): 9 tables, event search/filter/pagination, approval workflow, clean JSON errors, 44 tests, Postman collection
+
+🚧 Next: Phase 3 — Frontend

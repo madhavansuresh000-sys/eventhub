@@ -1,0 +1,283 @@
+{
+  "info": {
+    "name": "EventHub API (Phase 2)",
+    "description": "Every Phase 2 API with automatic checks. Run folders in order (1 to 5), or use Run collection. Needs the backend on localhost:8080 and MySQL in Docker. Folder 3 and 4 create one new event each run.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" },
+    { "key": "newEventId", "value": "" },
+    { "key": "startTime", "value": "" },
+    { "key": "endTime", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "1. Health",
+      "item": [
+        {
+          "name": "Backend is UP",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/health" },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('200 OK', () => pm.response.to.have.status(200));",
+            "pm.test('status is UP', () => pm.expect(pm.response.json().status).to.eql('UP'));"
+          ] } }]
+        }
+      ]
+    },
+    {
+      "name": "2. Browse events (public)",
+      "item": [
+        {
+          "name": "All published events (page 1)",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/events?page=0&size=10" },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "const body = pm.response.json();",
+            "pm.test('200 OK', () => pm.response.to.have.status(200));",
+            "pm.test('only PUBLISHED events', () => body.content.forEach(e => pm.expect(e.status).to.eql('PUBLISHED')));",
+            "pm.test('page info present', () => pm.expect(body).to.include.keys('page', 'size', 'totalElements', 'totalPages', 'last'));"
+          ] } }]
+        },
+        {
+          "name": "Filter by tag = tech",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/events?tag=tech&page=0" },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "const body = pm.response.json();",
+            "pm.test('200 OK', () => pm.response.to.have.status(200));",
+            "pm.test('every event has the tech tag', () => body.content.forEach(e => pm.expect(e.tags).to.include('tech')));",
+            "pm.test('sorted by date (earliest first)', () => {",
+            "  const dates = body.content.map(e => e.startTime);",
+            "  pm.expect(dates).to.eql([...dates].sort());",
+            "});"
+          ] } }]
+        },
+        {
+          "name": "Filter by club = robotics-club",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/events?club=robotics-club" },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('only Robotics Club events', () => pm.response.json().content.forEach(e => pm.expect(e.clubSlug).to.eql('robotics-club')));"
+          ] } }]
+        },
+        {
+          "name": "Search text = hackathon",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/events?q=hackathon" },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('finds the hackathon', () => pm.expect(pm.response.json().content[0].title).to.eql('24-Hour Hackathon'));"
+          ] } }]
+        },
+        {
+          "name": "Events in October 2026",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/events?from=2026-10-01&to=2026-10-31&size=50" },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('all start in October 2026', () => pm.response.json().content.forEach(e => pm.expect(e.startTime).to.match(/^2026-10-/)));"
+          ] } }]
+        },
+        {
+          "name": "Most expensive first",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/events?sort=price&dir=desc&size=5" },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "const prices = pm.response.json().content.map(e => e.price);",
+            "pm.test('prices go down', () => pm.expect(prices).to.eql([...prices].sort((a, b) => b - a)));"
+          ] } }]
+        },
+        {
+          "name": "Page 2 (5 per page)",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/events?page=1&size=5" },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "const body = pm.response.json();",
+            "pm.test('page number is 1 (the second page)', () => pm.expect(body.page).to.eql(1));",
+            "pm.test('at most 5 events', () => pm.expect(body.content.length).to.be.at.most(5));"
+          ] } }]
+        },
+        {
+          "name": "Event details: Tech Fest (id 1)",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/events/1" },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "const e = pm.response.json();",
+            "pm.test('200 OK', () => pm.response.to.have.status(200));",
+            "pm.test('is Tech Fest by Coding Club', () => { pm.expect(e.title).to.eql('Tech Fest 2026'); pm.expect(e.club.slug).to.eql('coding-club'); });"
+          ] } }]
+        },
+        {
+          "name": "Sold out event shows soldOut = true",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/events?q=Dance%20Night" },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Dance Night is sold out', () => pm.expect(pm.response.json().content[0].soldOut).to.eql(true));"
+          ] } }]
+        },
+        {
+          "name": "All clubs",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/clubs" },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('5 clubs', () => pm.expect(pm.response.json().length).to.eql(5));"
+          ] } }]
+        },
+        {
+          "name": "All tags",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/tags" },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('includes tech and music', () => pm.expect(pm.response.json()).to.include.members(['tech', 'music']));"
+          ] } }]
+        }
+      ]
+    },
+    {
+      "name": "3. Organizer: create and edit",
+      "item": [
+        {
+          "name": "Create event (starts as DRAFT)",
+          "event": [
+            { "listen": "prerequest", "script": { "exec": [
+              "// start 30 days from now, 3 hours long (format 2026-10-28T10:00:00)",
+              "const start = new Date(Date.now() + 30 * 24 * 3600 * 1000);",
+              "start.setHours(10, 0, 0, 0);",
+              "const end = new Date(start.getTime() + 3 * 3600 * 1000);",
+              "const fmt = d => new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 19);",
+              "pm.collectionVariables.set('startTime', fmt(start));",
+              "pm.collectionVariables.set('endTime', fmt(end));"
+            ] } },
+            { "listen": "test", "script": { "exec": [
+              "const e = pm.response.json();",
+              "pm.test('201 Created', () => pm.response.to.have.status(201));",
+              "pm.test('Location header points to the new event', () => pm.expect(pm.response.headers.get('Location')).to.eql('/api/events/' + e.id));",
+              "pm.test('starts as DRAFT with all seats free', () => { pm.expect(e.status).to.eql('DRAFT'); pm.expect(e.availableSeats).to.eql(60); });",
+              "pm.collectionVariables.set('newEventId', e.id);"
+            ] } }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/events",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"clubId\": 1,\n  \"title\": \"React Workshop\",\n  \"description\": \"Build your first React app with Vite and Tailwind.\",\n  \"venue\": \"CSE Block Lab 2\",\n  \"startTime\": \"{{startTime}}\",\n  \"endTime\": \"{{endTime}}\",\n  \"totalSeats\": 60,\n  \"price\": 50,\n  \"tags\": [\"tech\", \"workshop\"]\n}" }
+          }
+        },
+        {
+          "name": "Draft is hidden from the public (404)",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/events/{{newEventId}}" },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('404 Not Found', () => pm.response.to.have.status(404));"
+          ] } }]
+        },
+        {
+          "name": "Update event (more seats)",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/api/events/{{newEventId}}",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"clubId\": 1,\n  \"title\": \"React Workshop\",\n  \"description\": \"Build your first React app with Vite and Tailwind.\",\n  \"venue\": \"Seminar Hall A\",\n  \"startTime\": \"{{startTime}}\",\n  \"endTime\": \"{{endTime}}\",\n  \"totalSeats\": 80,\n  \"price\": 50,\n  \"tags\": [\"tech\", \"workshop\", \"coding\"]\n}" }
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "const e = pm.response.json();",
+            "pm.test('200 OK', () => pm.response.to.have.status(200));",
+            "pm.test('seats and venue updated', () => { pm.expect(e.totalSeats).to.eql(80); pm.expect(e.venue).to.eql('Seminar Hall A'); });"
+          ] } }]
+        }
+      ]
+    },
+    {
+      "name": "4. Approval workflow",
+      "item": [
+        {
+          "name": "Organizer submits (DRAFT -> PENDING_APPROVAL)",
+          "request": { "method": "POST", "url": "{{baseUrl}}/api/events/{{newEventId}}/submit" },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('now PENDING_APPROVAL', () => pm.expect(pm.response.json().status).to.eql('PENDING_APPROVAL'));"
+          ] } }]
+        },
+        {
+          "name": "Admin rejects with a reason (-> DRAFT)",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/events/{{newEventId}}/reject",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"reason\": \"Please mention that students must bring a laptop.\"\n}" }
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "const e = pm.response.json();",
+            "pm.test('back to DRAFT', () => pm.expect(e.status).to.eql('DRAFT'));",
+            "pm.test('reason saved for the organizer', () => pm.expect(e.reviewNote).to.include('laptop'));"
+          ] } }]
+        },
+        {
+          "name": "Organizer submits again (note is cleared)",
+          "request": { "method": "POST", "url": "{{baseUrl}}/api/events/{{newEventId}}/submit" },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "const e = pm.response.json();",
+            "pm.test('PENDING_APPROVAL again', () => pm.expect(e.status).to.eql('PENDING_APPROVAL'));",
+            "pm.test('old note cleared', () => pm.expect(e.reviewNote).to.eql(null));"
+          ] } }]
+        },
+        {
+          "name": "Admin approves (-> PUBLISHED)",
+          "request": { "method": "POST", "url": "{{baseUrl}}/api/events/{{newEventId}}/approve" },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('now PUBLISHED', () => pm.expect(pm.response.json().status).to.eql('PUBLISHED'));"
+          ] } }]
+        },
+        {
+          "name": "Students can now see it",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/events/{{newEventId}}" },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('200 OK', () => pm.response.to.have.status(200));",
+            "pm.test('it is the React Workshop', () => pm.expect(pm.response.json().title).to.eql('React Workshop'));"
+          ] } }]
+        }
+      ]
+    },
+    {
+      "name": "5. Errors (clean JSON)",
+      "item": [
+        {
+          "name": "400 - empty body lists every missing field",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/events",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{}" }
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "const body = pm.response.json();",
+            "pm.test('400 Bad Request', () => pm.response.to.have.status(400));",
+            "pm.test('lists title, venue, clubId ...', () => pm.expect(body.errors).to.include.keys('title', 'venue', 'clubId', 'startTime', 'totalSeats', 'price'));"
+          ] } }]
+        },
+        {
+          "name": "400 - wrong query value (page=abc)",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/events?page=abc" },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('400 Bad Request', () => pm.response.to.have.status(400));",
+            "pm.test('clear message', () => pm.expect(pm.response.json().detail).to.eql(\"Invalid value 'abc' for 'page'\"));"
+          ] } }]
+        },
+        {
+          "name": "404 - event does not exist",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/events/99999" },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('404 Not Found', () => pm.response.to.have.status(404));",
+            "pm.test('clear message', () => pm.expect(pm.response.json().detail).to.eql('Event 99999 not found'));"
+          ] } }]
+        },
+        {
+          "name": "409 - cannot approve a DRAFT (id 20)",
+          "request": { "method": "POST", "url": "{{baseUrl}}/api/events/20/approve" },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('409 Conflict', () => pm.response.to.have.status(409));",
+            "pm.test('explains the allowed move', () => pm.expect(pm.response.json().detail).to.include('allowed next: [PENDING_APPROVAL]'));"
+          ] } }]
+        },
+        {
+          "name": "400 - reject without a reason",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/events/9/reject",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{}" }
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('400 Bad Request', () => pm.response.to.have.status(400));",
+            "pm.test('reason is required', () => pm.expect(pm.response.json().errors.reason).to.eql('reason is required'));"
+          ] } }]
+        }
+      ]
+    }
+  ]
+}
