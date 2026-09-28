@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
 
 import { Notice } from '../../components/auth/AuthCard'
 import Button from '../../components/ui/Button'
@@ -7,7 +8,8 @@ import EmptyState from '../../components/ui/EmptyState'
 import { SelectField, TextField } from '../../components/ui/FormField'
 import Modal from '../../components/ui/Modal'
 import useForm from '../../hooks/useForm'
-import { useOrganizerData } from '../../state/OrganizerDataContext'
+import { notify } from '../../store/notificationsSlice'
+import { selectClubEvents, selectVolunteers, volunteerAdded, volunteerRemoved } from '../../store/organizerSlice'
 import { email, minLength, required } from '../../utils/validation'
 
 const departments = ['CSE', 'IT', 'ECE', 'EEE', 'Mechanical', 'Civil', 'MBA'].map((d) => ({ value: d, label: d }))
@@ -20,7 +22,8 @@ const rules = {
 }
 
 function AddVolunteerForm({ events, onAdded }) {
-  const { addVolunteer, volunteers } = useOrganizerData()
+  const dispatch = useDispatch()
+  const volunteers = useSelector(selectVolunteers)
 
   const { field, handleSubmit } = useForm({ name: '', email: '', department: '', eventId: '' }, rules, async (v) => {
     const duplicate = volunteers.some((x) => x.email.toLowerCase() === v.email.trim().toLowerCase() && x.eventId === Number(v.eventId))
@@ -28,7 +31,7 @@ function AddVolunteerForm({ events, onAdded }) {
       onAdded(null, `${v.email} is already a volunteer for that event.`)
       return
     }
-    addVolunteer({ ...v, name: v.name.trim(), email: v.email.trim() })
+    dispatch(volunteerAdded({ ...v, name: v.name.trim(), email: v.email.trim() }))
     onAdded(v.name.trim()) // the parent changes this form's key, which gives a fresh empty form
   })
 
@@ -52,7 +55,9 @@ function AddVolunteerForm({ events, onAdded }) {
 
 /** Volunteers scan QR tickets at the gate (Step 8 builds their scanner screen). */
 export default function VolunteersPage() {
-  const { events, volunteers, removeVolunteer } = useOrganizerData()
+  const dispatch = useDispatch()
+  const events = useSelector(selectClubEvents)
+  const volunteers = useSelector(selectVolunteers)
   const [toRemove, setToRemove] = useState(null)
   const [message, setMessage] = useState(null)
   const [formKey, setFormKey] = useState(0)
@@ -123,7 +128,12 @@ export default function VolunteersPage() {
         footer={
           <>
             <Button variant="ghost" onClick={() => setToRemove(null)}>Keep</Button>
-            <Button variant="danger" onClick={() => { removeVolunteer(toRemove.id); setToRemove(null); setMessage(null) }}>Remove</Button>
+            <Button variant="danger" onClick={() => {
+              dispatch(volunteerRemoved(toRemove.id))
+              dispatch(notify(`${toRemove.name} was removed.`))
+              setToRemove(null)
+              setMessage(null)
+            }}>Remove</Button>
           </>
         }
       >

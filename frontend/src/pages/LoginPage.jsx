@@ -1,10 +1,12 @@
 import { useState } from 'react'
+import { useDispatch } from 'react-redux'
 import { Link } from 'react-router-dom'
 
 import AuthCard, { Notice } from '../components/auth/AuthCard'
 import Button from '../components/ui/Button'
 import { PasswordField, TextField } from '../components/ui/FormField'
 import useForm from '../hooks/useForm'
+import { loggedIn } from '../store/authSlice'
 import { email, required } from '../utils/validation'
 
 const wait = (ms) => new Promise((r) => setTimeout(r, ms))
@@ -16,12 +18,15 @@ const rules = {
 
 export default function LoginPage() {
   const [done, setDone] = useState(null)
+  const dispatch = useDispatch()
 
   const { field, handleSubmit, submitting, values } = useForm(
     { email: '', password: '', remember: true },
     rules,
     async (v) => {
-      await wait(600) // Phase 5: POST /api/auth/login
+      await wait(600) // Phase 5: POST /api/auth/login (the server checks the password and sends a JWT)
+      const name = v.email.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+      dispatch(loggedIn({ name, email: v.email.trim(), role: 'STUDENT' }))
       setDone(v.email)
     },
   )
@@ -34,7 +39,7 @@ export default function LoginPage() {
     >
       {done ? (
         <Notice tone="success">
-          ✅ The form is valid for <strong>{done}</strong>. Real login connects to the backend in Phase 5.
+          ✅ Logged in as <strong>{done}</strong> (demo: the password is not checked yet). Real login connects to the backend in Phase 5.
         </Notice>
       ) : (
         <form onSubmit={handleSubmit} noValidate className="space-y-4">

@@ -1,9 +1,10 @@
 import { QRCodeSVG } from 'qrcode.react'
+import { useSelector } from 'react-redux'
 import { useParams } from 'react-router-dom'
 
 import Button from '../components/ui/Button'
 import EmptyState from '../components/ui/EmptyState'
-import { useStudentData } from '../state/StudentDataContext'
+import { selectStudent, selectTickets } from '../store/studentSlice'
 import { formatLongDate } from '../utils/format'
 
 /**
@@ -12,7 +13,8 @@ import { formatLongDate } from '../utils/format'
  */
 export default function CertificateViewPage() {
   const { id } = useParams()
-  const { tickets, student } = useStudentData()
+  const tickets = useSelector(selectTickets)
+  const student = useSelector(selectStudent)
   const ticket = tickets.find((t) => t.certificateId === id && t.status === 'ATTENDED')
 
   if (!ticket) {

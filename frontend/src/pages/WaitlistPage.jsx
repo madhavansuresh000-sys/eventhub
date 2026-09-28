@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
 import { Link, useSearchParams } from 'react-router-dom'
 
 import { fetchEvent } from '../api/events'
@@ -11,12 +12,14 @@ import EmptyState from '../components/ui/EmptyState'
 import { Skeleton } from '../components/ui/Loader'
 import Modal from '../components/ui/Modal'
 import useAsync from '../hooks/useAsync'
-import { useStudentData } from '../state/StudentDataContext'
+import { notify } from '../store/notificationsSlice'
+import { selectWaitlist, waitlistJoined, waitlistLeft } from '../store/studentSlice'
 import { formatShortDate } from '../utils/format'
 
 /** Shown when you arrive from "Join waitlist" on a sold-out event (/waitlist?event=6). */
 function JoinCard({ eventId }) {
-  const { waitlist, joinWaitlist } = useStudentData()
+  const waitlist = useSelector(selectWaitlist)
+  const dispatch = useDispatch()
   const { data: event, loading, error } = useAsync(() => fetchEvent(eventId), [eventId])
   const [joined, setJoined] = useState(false)
 
@@ -30,10 +33,10 @@ function JoinCard({ eventId }) {
   }
 
   const join = () => {
-    joinWaitlist({
+    dispatch(waitlistJoined({
       eventId: event.id, title: event.title, clubName: event.club.name, clubSlug: event.club.slug, venue: event.venue,
       startTime: event.startTime, tags: event.tags, position: 4, joinedAt: new Date().toISOString(),
-    })
+    }))
     setJoined(true)
   }
 
@@ -52,7 +55,8 @@ function JoinCard({ eventId }) {
 
 export default function WaitlistPage() {
   const [params] = useSearchParams()
-  const { waitlist, leaveWaitlist } = useStudentData()
+  const waitlist = useSelector(selectWaitlist)
+  const dispatch = useDispatch()
   const [toLeave, setToLeave] = useState(null)
   const eventId = params.get('event')
 
@@ -96,7 +100,11 @@ export default function WaitlistPage() {
         footer={
           <>
             <Button variant="ghost" onClick={() => setToLeave(null)}>Stay in line</Button>
-            <Button variant="danger" onClick={() => { leaveWaitlist(toLeave.eventId); setToLeave(null) }}>Leave</Button>
+            <Button variant="danger" onClick={() => {
+              dispatch(waitlistLeft(toLeave.eventId))
+              dispatch(notify(`You left the waitlist for ${toLeave.title}.`))
+              setToLeave(null)
+            }}>Leave</Button>
           </>
         }
       >

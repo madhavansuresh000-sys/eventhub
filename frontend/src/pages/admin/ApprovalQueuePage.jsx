@@ -1,13 +1,14 @@
 import { useState } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
 
-import { Notice } from '../../components/auth/AuthCard'
 import Badge from '../../components/ui/Badge'
 import Button from '../../components/ui/Button'
 import Card from '../../components/ui/Card'
 import EmptyState from '../../components/ui/EmptyState'
 import { TextAreaField } from '../../components/ui/FormField'
 import Modal from '../../components/ui/Modal'
-import { useAdminData } from '../../state/AdminDataContext'
+import { approveEvent, rejectEvent, selectApprovalQueue } from '../../store/adminSlice'
+import { notify } from '../../store/notificationsSlice'
 import { daysUntil, emojiFor, formatPrice, formatShortDate, formatTimeRange, gradientFor } from '../../utils/format'
 
 const REASON_MAX = 500 // same limit as the backend's ReviewRequest
@@ -126,10 +127,10 @@ function SendBackModal({ event, onClose, onConfirm }) {
 }
 
 export default function ApprovalQueuePage() {
-  const { queue, approveEvent, rejectEvent } = useAdminData()
+  const dispatch = useDispatch()
+  const queue = useSelector(selectApprovalQueue)
   const [toApprove, setToApprove] = useState(null)
   const [toSendBack, setToSendBack] = useState(null)
-  const [message, setMessage] = useState(null)
 
   return (
     <div className="space-y-6">
@@ -139,8 +140,6 @@ export default function ApprovalQueuePage() {
           Events that clubs sent for review. The one that starts soonest is at the top.
         </p>
       </div>
-
-      {message && <Notice tone="success">{message}</Notice>}
 
       {queue.length === 0 ? (
         <EmptyState
@@ -166,8 +165,8 @@ export default function ApprovalQueuePage() {
           <>
             <Button variant="ghost" onClick={() => setToApprove(null)}>Cancel</Button>
             <Button onClick={() => {
-              approveEvent(toApprove)
-              setMessage(`"${toApprove.title}" is now published. Students can book it.`)
+              dispatch(approveEvent(toApprove))
+              dispatch(notify(`"${toApprove.title}" is now published. Students can book it.`))
               setToApprove(null)
             }}>Approve</Button>
           </>
@@ -181,8 +180,8 @@ export default function ApprovalQueuePage() {
           event={toSendBack}
           onClose={() => setToSendBack(null)}
           onConfirm={(reason) => {
-            rejectEvent(toSendBack, reason)
-            setMessage(`"${toSendBack.title}" was sent back to ${toSendBack.club.name} with your note.`)
+            dispatch(rejectEvent(toSendBack, reason))
+            dispatch(notify(`"${toSendBack.title}" was sent back to ${toSendBack.club.name} with your note.`))
             setToSendBack(null)
           }}
         />

@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate, useParams } from 'react-router-dom'
 
 import { fetchTags } from '../../api/events'
@@ -10,7 +11,7 @@ import EmptyState from '../../components/ui/EmptyState'
 import { TextAreaField, TextField } from '../../components/ui/FormField'
 import useAsync from '../../hooks/useAsync'
 import useForm from '../../hooks/useForm'
-import { useOrganizerData } from '../../state/OrganizerDataContext'
+import { saveEvent, selectClubEvent } from '../../store/organizerSlice'
 import { maxLength, notNegative, required, wholeNumberBetween } from '../../utils/validation'
 
 const MAX_TAGS = 5
@@ -63,7 +64,7 @@ function TagPicker({ value, onChange, error }) {
 
 function EventForm({ existing }) {
   const navigate = useNavigate()
-  const { saveEvent } = useOrganizerData()
+  const dispatch = useDispatch()
   const [serverError, setServerError] = useState(null)
   // a ref, not state: it must be updated instantly, in the same click that submits the form
   const submitAfterSave = useRef(false)
@@ -74,10 +75,11 @@ function EventForm({ existing }) {
 
   const { field, values, errors, setValue, handleSubmit, submitting } = useForm(initial, rules, async (v) => {
     try {
-      const saved = saveEvent(
+      // a thunk: it checks the rules first and throws an Error if one is broken
+      const saved = dispatch(saveEvent(
         { ...v, id: existing?.id, totalSeats: Number(v.totalSeats), price: Number(v.price), title: v.title.trim(), venue: v.venue.trim() },
         { submit: submitAfterSave.current },
-      )
+      ))
       navigate('/organizer', {
         state: { message: submitAfterSave.current ?`"${saved.title}" was saved and sent for approval.` : `"${saved.title}" was saved as a draft.` },
       })
@@ -140,8 +142,7 @@ function EventForm({ existing }) {
 
 export default function EventFormPage() {
   const { id } = useParams()
-  const { findEvent } = useOrganizerData()
-  const existing = id ? findEvent(id) : null
+  const existing = useSelector((state) => (id ? selectClubEvent(state, id) : null))
 
   if (id && !existing) {
     return <EmptyState title="Event not found" message="It may belong to another club."

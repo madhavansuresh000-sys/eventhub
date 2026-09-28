@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
 import { Link, useLocation } from 'react-router-dom'
 
 import { Notice } from '../../components/auth/AuthCard'
@@ -8,7 +9,7 @@ import Card from '../../components/ui/Card'
 import EmptyState from '../../components/ui/EmptyState'
 import Modal from '../../components/ui/Modal'
 import StatCard from '../../components/ui/StatCard'
-import { useOrganizerData } from '../../state/OrganizerDataContext'
+import { selectClub, selectClubEvents, submitEvent } from '../../store/organizerSlice'
 import { formatMoney, formatShortDate } from '../../utils/format'
 
 function EventRow({ event, onSubmit }) {
@@ -50,7 +51,9 @@ function EventRow({ event, onSubmit }) {
 }
 
 export default function OrganizerDashboardPage() {
-  const { club, events, submitEvent } = useOrganizerData()
+  const dispatch = useDispatch()
+  const club = useSelector(selectClub)
+  const events = useSelector(selectClubEvents)
   const location = useLocation()
   const [toSubmit, setToSubmit] = useState(null)
   const [message, setMessage] = useState(location.state?.message ?? null)
@@ -106,7 +109,7 @@ export default function OrganizerDashboardPage() {
           <>
             <Button variant="ghost" onClick={() => setToSubmit(null)}>Not yet</Button>
             <Button onClick={() => {
-              submitEvent(toSubmit.id)
+              dispatch(submitEvent(toSubmit.id))
               setMessage(`"${toSubmit.title}" was sent to the admin for approval.`)
               setToSubmit(null)
             }}>Submit</Button>

@@ -1,10 +1,11 @@
 import { useCallback, useMemo, useState } from 'react'
+import { useSelector } from 'react-redux'
 
 import QrCamera from '../components/scanner/QrCamera'
 import Button from '../components/ui/Button'
 import Card from '../components/ui/Card'
 import { currentVolunteer, gateEvents, gateTickets, tryCodes } from '../data/sampleGate'
-import { useStudentData } from '../state/StudentDataContext'
+import { selectStudent, selectTickets } from '../store/studentSlice'
 import { formatTime } from '../utils/format'
 
 /**
@@ -58,7 +59,8 @@ function ResultPanel({ result }) {
 }
 
 export default function ScannerPage() {
-  const { tickets: myTickets, student } = useStudentData()
+  const myTickets = useSelector(selectTickets)
+  const student = useSelector(selectStudent)
   const [eventId, setEventId] = useState(gateEvents[0].id)
   const [code, setCode] = useState('')
   const [useCamera, setUseCamera] = useState(false)

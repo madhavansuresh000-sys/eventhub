@@ -1,6 +1,7 @@
+import { useSelector } from 'react-redux'
 import { NavLink, Outlet } from 'react-router-dom'
 
-import { useAdminData } from '../../state/AdminDataContext'
+import { selectApprovalQueue } from '../../store/adminSlice'
 
 const linkClass = ({ isActive }) =>
   'flex items-center justify-between gap-3 whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium transition-colors ' +
@@ -9,7 +10,7 @@ const linkClass = ({ isActive }) =>
     : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800')
 
 function Sidebar() {
-  const { queue } = useAdminData()
+  const queue = useSelector(selectApprovalQueue)
   return (
     <aside className="lg:sticky lg:top-24 lg:self-start">
       <div className="mb-4 overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">

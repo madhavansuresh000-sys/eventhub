@@ -1,10 +1,11 @@
+import { useSelector } from 'react-redux'
 import { Link } from 'react-router-dom'
 
 import Badge from '../../components/ui/Badge'
 import Button from '../../components/ui/Button'
 import Card from '../../components/ui/Card'
 import StatCard from '../../components/ui/StatCard'
-import { useAdminData } from '../../state/AdminDataContext'
+import { selectApprovalQueue, selectClubStats, selectDecisions } from '../../store/adminSlice'
 import { formatMoney, formatShortDate, gradientFor } from '../../utils/format'
 
 const timeFormat = new Intl.DateTimeFormat('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true })
@@ -55,7 +56,9 @@ function ClubTable({ rows }) {
 }
 
 export default function AdminOverviewPage() {
-  const { clubStats, queue, decisions } = useAdminData()
+  const clubStats = useSelector(selectClubStats)
+  const queue = useSelector(selectApprovalQueue)
+  const decisions = useSelector(selectDecisions)
 
   const total = (key) => clubStats.reduce((n, r) => n + r[key], 0)
 

@@ -1,14 +1,15 @@
+import { useSelector } from 'react-redux'
 import { Link } from 'react-router-dom'
 
 import Button from '../components/ui/Button'
 import Card from '../components/ui/Card'
 import EmptyState from '../components/ui/EmptyState'
-import { useStudentData } from '../state/StudentDataContext'
+import { selectTickets } from '../store/studentSlice'
 import { formatLongDate, gradientFor } from '../utils/format'
 
 /** Certificates exist only for events you ATTENDED (scanned at the gate) - signature feature 4. */
 export default function CertificatesPage() {
-  const { tickets } = useStudentData()
+  const tickets = useSelector(selectTickets)
   const earned = tickets.filter((t) => t.status === 'ATTENDED' && t.certificateId)
 
   return (

@@ -1,10 +1,12 @@
 import { useState } from 'react'
+import { useDispatch } from 'react-redux'
 import { Link } from 'react-router-dom'
 
 import AuthCard, { Notice } from '../components/auth/AuthCard'
 import Button from '../components/ui/Button'
 import { PasswordField, SelectField, TextField } from '../components/ui/FormField'
 import useForm from '../hooks/useForm'
+import { loggedIn } from '../store/authSlice'
 import {
   email, matches, minLength, mustBeTrue, passwordScore, required, strongPassword,
 } from '../utils/validation'
@@ -49,12 +51,14 @@ function StrengthMeter({ password }) {
 
 export default function RegisterPage() {
   const [done, setDone] = useState(null)
+  const dispatch = useDispatch()
 
   const { field, handleSubmit, submitting, values } = useForm(
     { fullName: '', email: '', department: '', year: '', password: '', confirm: '', agree: false },
     rules,
     async (v) => {
       await wait(700) // Phase 5: POST /api/auth/register
+      dispatch(loggedIn({ name: v.fullName.trim(), email: v.email.trim(), role: 'STUDENT' }))
       setDone(v.fullName.trim().split(' ')[0])
     },
   )
@@ -67,7 +71,7 @@ export default function RegisterPage() {
     >
       {done ? (
         <Notice tone="success">
-          🎉 Welcome, <strong>{done}</strong>! The form is valid. Accounts are saved to the database in Phase 5.
+          🎉 Welcome, <strong>{done}</strong>! You are logged in (demo). Accounts are saved to the database in Phase 5.
         </Notice>
       ) : (
         <form onSubmit={handleSubmit} noValidate className="space-y-4">

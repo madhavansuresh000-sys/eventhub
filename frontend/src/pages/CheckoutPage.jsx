@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 
 import { fetchEvent } from '../api/events'
@@ -10,11 +11,15 @@ import EmptyState from '../components/ui/EmptyState'
 import { Skeleton } from '../components/ui/Loader'
 import useAsync, { describeError } from '../hooks/useAsync'
 import useCountdown, { formatClock } from '../hooks/useCountdown'
-import { useStudentData } from '../state/StudentDataContext'
+import { cartCleared, HOLD_MINUTES, seatsHeld, selectCart } from '../store/cartSlice'
+import { selectStudent, ticketsBooked } from '../store/studentSlice'
 import { formatPrice, formatShortDate } from '../utils/format'
 
-const HOLD_MINUTES = 10
-const holdEnd = () => Date.now() + HOLD_MINUTES * 60 * 1000
+/** The event fields a ticket needs, plus how many seats. This is what goes into the cart. */
+const cartItemFor = (event, quantity) => ({
+  eventId: event.id, title: event.title, clubName: event.club.name, clubSlug: event.club.slug,
+  venue: event.venue, startTime: event.startTime, tags: event.tags, price: Number(event.price), quantity,
+})
 const wait = (ms) => new Promise((r) => setTimeout(r, ms))
 
 const paymentMethods = [
@@ -46,11 +51,18 @@ function HoldTimer({ secondsLeft }) {
 
 function Checkout({ event, quantity }) {
   const navigate = useNavigate()
-  const { student, bookTickets } = useStudentData()
-  const [endsAt, setEndsAt] = useState(holdEnd)
-  const secondsLeft = useCountdown(endsAt)
+  const dispatch = useDispatch()
+  const student = useSelector(selectStudent)
+  const cart = useSelector(selectCart)
   const [method, setMethod] = useState('upi')
   const [paying, setPaying] = useState(false)
+
+  // Same event and quantity already in the cart? Keep that hold (and its timer). Otherwise hold new seats.
+  const held = cart.item?.eventId === event.id && cart.item.quantity === quantity
+  useEffect(() => {
+    if (!held && !paying) dispatch(seatsHeld(cartItemFor(event, quantity)))
+  }, [held, paying, event, quantity, dispatch])
+  const secondsLeft = useCountdown(cart.holdEndsAt ?? 0)
 
   const free = Number(event.price) === 0
   const total = Number(event.price) * quantity
@@ -58,15 +70,13 @@ function Checkout({ event, quantity }) {
   const pay = async () => {
     setPaying(true)
     await wait(1200) // Phase 6: POST /api/bookings, then the payment gateway
-    const ticketId = bookTickets(
-      {
-        eventId: event.id, title: event.title, clubName: event.club.name, clubSlug: event.club.slug,
-        venue: event.venue, startTime: event.startTime, tags: event.tags, price: Number(event.price),
-      },
-      quantity,
-    )
-    navigate(`/tickets/${ticketId}?new=1`)
+    // the action creator's "prepare" made the ticket id; dispatch returns the action
+    const { payload: ticket } = dispatch(ticketsBooked(cart.item, quantity))
+    dispatch(cartCleared())
+    navigate(`/tickets/${ticket.id}?new=1`)
   }
+
+  if (!held && !paying) return <Skeleton className="h-96 w-full" />
 
   if (secondsLeft === 0 && !paying) {
     return (
@@ -75,7 +85,7 @@ function Checkout({ event, quantity }) {
         message={`We held ${quantity} seat${quantity > 1 ? 's' : ''} for ${HOLD_MINUTES} minutes. They are now free for other students.`}
         action={
           <div className="flex gap-3">
-            <Button onClick={() => setEndsAt(holdEnd())}>Hold seats again</Button>
+            <Button onClick={() => dispatch(seatsHeld(cartItemFor(event, quantity)))}>Hold seats again</Button>
             <Button to={`/events/${event.id}`} variant="secondary">Back to event</Button>
           </div>
         }

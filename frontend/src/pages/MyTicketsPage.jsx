@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
 import { Link } from 'react-router-dom'
 
 import EventPoster from '../components/events/EventPoster'
@@ -8,7 +9,8 @@ import Button from '../components/ui/Button'
 import Card from '../components/ui/Card'
 import EmptyState from '../components/ui/EmptyState'
 import Modal from '../components/ui/Modal'
-import { useStudentData } from '../state/StudentDataContext'
+import { notify } from '../store/notificationsSlice'
+import { selectTickets, selectWaitlist, ticketCancelled } from '../store/studentSlice'
 import { formatShortDate } from '../utils/format'
 
 const filters = [
@@ -39,7 +41,9 @@ function TicketRow({ ticket, onCancel }) {
 }
 
 export default function MyTicketsPage() {
-  const { tickets, waitlist, cancelTicket } = useStudentData()
+  const tickets = useSelector(selectTickets)
+  const waitlist = useSelector(selectWaitlist)
+  const dispatch = useDispatch()
   const [active, setActive] = useState('upcoming')
   const [toCancel, setToCancel] = useState(null)
 
@@ -90,7 +94,11 @@ export default function MyTicketsPage() {
         footer={
           <>
             <Button variant="ghost" onClick={() => setToCancel(null)}>Keep it</Button>
-            <Button variant="danger" onClick={() => { cancelTicket(toCancel.id); setToCancel(null) }}>Yes, cancel</Button>
+            <Button variant="danger" onClick={() => {
+              dispatch(ticketCancelled(toCancel.id))
+              dispatch(notify(`Booking for ${toCancel.title} cancelled.`))
+              setToCancel(null)
+            }}>Yes, cancel</Button>
           </>
         }
       >

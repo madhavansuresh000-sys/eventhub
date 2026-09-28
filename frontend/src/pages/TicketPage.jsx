@@ -1,4 +1,5 @@
 import { QRCodeSVG } from 'qrcode.react'
+import { useSelector } from 'react-redux'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 
 import { Notice } from '../components/auth/AuthCard'
@@ -6,14 +7,15 @@ import TicketStatusBadge from '../components/tickets/TicketStatusBadge'
 import Button from '../components/ui/Button'
 import EmptyState from '../components/ui/EmptyState'
 import { ArrowLeftIcon, CalendarIcon, MapPinIcon, TicketIcon } from '../components/ui/icons'
-import { useStudentData } from '../state/StudentDataContext'
+import { selectStudent, selectTickets } from '../store/studentSlice'
 import { formatLongDate, formatPrice, formatTime, gradientFor } from '../utils/format'
 
 /** The e-ticket with the QR code that volunteers scan at the gate (sketch 4 -> "Show QR ticket"). */
 export default function TicketPage() {
   const { id } = useParams()
   const [params] = useSearchParams()
-  const { tickets, student } = useStudentData()
+  const tickets = useSelector(selectTickets)
+  const student = useSelector(selectStudent)
   const ticket = tickets.find((t) => t.id === id)
 
   if (!ticket) {

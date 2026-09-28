@@ -2,6 +2,7 @@ import { Outlet } from 'react-router-dom'
 
 import Footer from './Footer'
 import Navbar from './Navbar'
+import Toaster from './Toaster'
 
 /** Every page shares the same top menu and footer; <Outlet /> is where the page appears. */
 export default function Layout() {
@@ -12,6 +13,7 @@ export default function Layout() {
         <Outlet />
       </main>
       <Footer />
+      <Toaster />
     </div>
   )
 }

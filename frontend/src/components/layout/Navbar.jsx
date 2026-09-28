@@ -1,7 +1,12 @@
 import { useState } from 'react'
-import { NavLink, useLocation } from 'react-router-dom'
+import { useDispatch, useSelector } from 'react-redux'
+import { Link, NavLink, useLocation } from 'react-router-dom'
 
+import useCountdown, { formatClock } from '../../hooks/useCountdown'
 import useTheme from '../../hooks/useTheme'
+import { loggedOut, selectUser } from '../../store/authSlice'
+import { selectCart } from '../../store/cartSlice'
+import { notify } from '../../store/notificationsSlice'
 import Button from '../ui/Button'
 import { CloseIcon, MenuIcon, MoonIcon, SunIcon } from '../ui/icons'
 import Logo from './Logo'
@@ -37,6 +42,39 @@ function ThemeToggle() {
   )
 }
 
+/** While seats are held (cart slice), a small timer that leads back to checkout, on every page. */
+function SeatHoldPill() {
+  const { item, holdEndsAt } = useSelector(selectCart)
+  const secondsLeft = useCountdown(holdEndsAt ?? 0)
+  const location = useLocation()
+  if (!item || secondsLeft === 0 || location.pathname.startsWith('/checkout')) return null
+  return (
+    <Link
+      to={`/checkout/${item.eventId}?qty=${item.quantity}`}
+      className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-900 hover:bg-amber-200 dark:bg-amber-900/50 dark:text-amber-200"
+      title={`${item.quantity} seat(s) held for ${item.title}`}
+    >
+      🎟️ <span className="font-mono tabular-nums">{formatClock(secondsLeft)}</span>
+    </Link>
+  )
+}
+
+/** Login button, or the user's name and a Logout button (auth slice). */
+function AccountButtons({ className = '' }) {
+  const user = useSelector(selectUser)
+  const dispatch = useDispatch()
+  if (!user) return <Button to="/login" size="sm" className={className}>Login</Button>
+  return (
+    <span className={`flex items-center gap-2 ${className}`}>
+      <span className="text-sm font-medium text-slate-700 dark:text-slate-200">Hi, {user.name.split(' ')[0]}</span>
+      <Button size="sm" variant="ghost" onClick={() => {
+        dispatch(loggedOut())
+        dispatch(notify('You are logged out.'))
+      }}>Logout</Button>
+    </span>
+  )
+}
+
 export default function Navbar() {
   const [open, setOpen] = useState(false)
   const location = useLocation()
@@ -62,10 +100,11 @@ export default function Navbar() {
         </div>
 
         <div className="flex items-center gap-2">
+          <SeatHoldPill />
           <ThemeToggle />
           {/* wrapper: the button's own inline-flex would override "hidden" */}
           <span className="hidden sm:block">
-            <Button to="/login" size="sm">Login</Button>
+            <AccountButtons />
           </span>
           <button
             type="button"
@@ -88,7 +127,7 @@ export default function Navbar() {
               </NavLink>
             ))}
             <span className="mt-2 sm:hidden">
-              <Button to="/login" size="sm" className="w-full">Login</Button>
+              <AccountButtons className="w-full justify-between" />
             </span>
           </div>
         </div>

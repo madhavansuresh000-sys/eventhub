@@ -1,6 +1,7 @@
+import { useSelector } from 'react-redux'
 import { NavLink, Outlet } from 'react-router-dom'
 
-import { useOrganizerData } from '../../state/OrganizerDataContext'
+import { selectClub } from '../../store/organizerSlice'
 import { gradientFor } from '../../utils/format'
 
 const links = [
@@ -16,7 +17,7 @@ const linkClass = ({ isActive }) =>
     : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800')
 
 function Sidebar() {
-  const { club } = useOrganizerData()
+  const club = useSelector(selectClub)
   return (
     <aside className="lg:sticky lg:top-24 lg:self-start">
       <div className="mb-4 overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
