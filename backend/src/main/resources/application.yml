@@ -1,0 +1,56 @@
+# ---------- Common settings (all profiles) ----------
+spring:
+  application:
+    name: eventhub
+  profiles:
+    default: dev            # when no profile is chosen, use "dev"
+  jpa:
+    hibernate:
+      ddl-auto: validate    # Flyway creates tables; Hibernate only checks them
+    open-in-view: false
+  flyway:
+    enabled: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+
+---
+# ---------- dev: your laptop (MySQL + Mailpit in Docker) ----------
+spring:
+  config:
+    activate:
+      on-profile: dev
+    # read MYSQL_USER / MYSQL_PASSWORD from the project's .env file (not on GitHub)
+    import: optional:file:../.env[.properties]
+  datasource:
+    url: jdbc:mysql://localhost:3306/eventhub
+    username: ${MYSQL_USER}
+    password: ${MYSQL_PASSWORD}
+  jpa:
+    show-sql: true
+  mail:
+    host: localhost
+    port: 1025              # Mailpit: see emails at http://localhost:8025
+
+---
+# ---------- prod: real server (values come from environment variables) ----------
+spring:
+  config:
+    activate:
+      on-profile: prod
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+  mail:
+    host: ${MAIL_HOST}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
