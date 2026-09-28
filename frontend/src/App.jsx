@@ -18,13 +18,13 @@ import LoginPage from './pages/LoginPage'
 import MyTicketsPage from './pages/MyTicketsPage'
 import NotFoundPage from './pages/NotFoundPage'
 import RegisterPage from './pages/RegisterPage'
+import ScannerPage from './pages/ScannerPage'
 import TicketPage from './pages/TicketPage'
 import WaitlistPage from './pages/WaitlistPage'
 import StyleGuidePage from './pages/StyleGuidePage'
 
 /** Pages still to build, with the Phase 3 step that builds them. */
 const upcoming = [
-  { path: '/scanner', title: 'Gate scanner', step: 8, description: 'Scan QR tickets: green = in, red = stop.' },
   { path: '/admin', title: 'Admin overview', step: 9, description: 'Numbers across all clubs.' },
   { path: '/admin/approvals', title: 'Approval queue', step: 9, description: 'Approve or send back events.' },
 ]
@@ -49,6 +49,7 @@ export default function App() {
           <Route path="events/:id/edit" element={<EventFormPage />} />
           <Route path="volunteers" element={<VolunteersPage />} />
         </Route>
+        <Route path="scanner" element={<ScannerPage />} />
         <Route path="login" element={<LoginPage />} />
         <Route path="register" element={<RegisterPage />} />
         <Route
