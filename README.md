@@ -42,4 +42,6 @@ Phase_0 … Phase_9/     Checklist for each phase
 ## Status
 ![CI](https://github.com/madhavansuresh000-sys/eventhub/actions/workflows/ci.yml/badge.svg)
 
-🚧 Phase 1: Creating the project (steps 1-8 done, step 9 paper sketches pending)
+✅ Phase 1: Creating the project — complete (28 Sep 2026). Sketches: `docs/sketches/`
+
+🚧 Next: Phase 2 — Backend
