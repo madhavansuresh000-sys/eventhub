@@ -1,13 +1,36 @@
+import { useEffect, useState } from 'react'
 import { Link, Route, Routes } from 'react-router-dom'
+import api from './api/client'
+
+function BackendStatus() {
+  const [status, setStatus] = useState('checking')
+
+  useEffect(() => {
+    api
+      .get('/health')
+      .then((res) => setStatus(res.data.status))
+      .catch(() => setStatus('DOWN'))
+  }, [])
+
+  const colors = {
+    UP: 'bg-green-100 text-green-800',
+    DOWN: 'bg-red-100 text-red-800',
+    checking: 'bg-yellow-100 text-yellow-800',
+  }
+
+  return (
+    <p className={`mt-6 rounded-lg px-4 py-2 ${colors[status] ?? colors.DOWN}`}>
+      Backend: {status}
+    </p>
+  )
+}
 
 function Home() {
   return (
     <div className="rounded-2xl bg-white p-8 shadow">
       <h1 className="text-3xl font-bold text-indigo-600">EventHub</h1>
       <p className="mt-2 text-gray-600">Find and book college events.</p>
-      <p className="mt-6 rounded-lg bg-yellow-100 px-4 py-2 text-yellow-800">
-        Backend: not connected yet (Phase 1, Step 7)
-      </p>
+      <BackendStatus />
     </div>
   )
 }
