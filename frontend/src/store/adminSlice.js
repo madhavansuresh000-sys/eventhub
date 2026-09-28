@@ -1,87 +1,90 @@
-import { createSelector, createSlice } from '@reduxjs/toolkit'
+import { createAsyncThunk, createSlice } from '@reduxjs/toolkit'
 
-import { allClubs, codingClubSubmitter, otherClubEvents } from '../data/sampleAdmin'
-import { eventSaved, selectClub, selectClubEvents } from './organizerSlice'
+import { approveEventRequest, fetchClubStats, fetchPendingEvents, rejectEventRequest } from '../api/admin'
+import { describeError } from '../hooks/useAsync'
 
 /**
- * Admin view of ALL clubs. The Coding Club's events live in the organizer slice (so approving here
- * changes the organizer dashboard too); the other four clubs' events live here.
+ * Admin data from the backend: the approval queue and one stats row per club.
+ * "decisions" is only this browser session's history (an audit log table could come later).
  */
+
+export const loadApprovalQueue = createAsyncThunk('admin/loadQueue', async (_, { rejectWithValue }) => {
+  try {
+    return await fetchPendingEvents()
+  } catch (e) {
+    return rejectWithValue(describeError(e))
+  }
+})
+
+export const loadClubStats = createAsyncThunk('admin/loadStats', async (_, { rejectWithValue }) => {
+  try {
+    return await fetchClubStats()
+  } catch (e) {
+    return rejectWithValue(describeError(e))
+  }
+})
+
+/** PENDING_APPROVAL -> PUBLISHED. The server answers with the updated event. */
+export const approveEvent = createAsyncThunk('admin/approve', async (event, { rejectWithValue }) => {
+  try {
+    return await approveEventRequest(event.id)
+  } catch (e) {
+    return rejectWithValue(describeError(e))
+  }
+})
+
+/** PENDING_APPROVAL -> DRAFT with a note for the organizer. */
+export const rejectEvent = createAsyncThunk('admin/reject', async ({ event, reason }, { rejectWithValue }) => {
+  try {
+    return await rejectEventRequest(event.id, reason.trim())
+  } catch (e) {
+    return rejectWithValue(describeError(e))
+  }
+})
+
+const load = { status: 'idle', error: null } // idle -> loading -> ready | failed
+
+function tracked(builder, thunk, key, onData) {
+  builder
+    .addCase(thunk.pending, (state) => {
+      state[key] = { status: 'loading', error: null }
+    })
+    .addCase(thunk.fulfilled, (state, action) => {
+      state[key] = { status: 'ready', error: null }
+      onData(state, action.payload)
+    })
+    .addCase(thunk.rejected, (state, action) => {
+      state[key] = { status: 'failed', error: action.payload?.message ?? action.error.message }
+    })
+}
+
+function decided(state, event, approved, reason) {
+  state.queue = state.queue.filter((e) => e.id !== event.id)
+  state.decisions.unshift({ eventId: event.id, title: event.title, club: event.club, approved, reason, at: new Date().toISOString() })
+  state.decisions.splice(10) // keep the newest 10
+}
+
 const adminSlice = createSlice({
   name: 'admin',
-  initialState: { otherEvents: otherClubEvents, decisions: [] },
-  reducers: {
-    otherEventSaved: (state, action) => {
-      const i = state.otherEvents.findIndex((e) => e.id === action.payload.id)
-      state.otherEvents[i] = action.payload
-    },
-    decisionRecorded: {
-      reducer: (state, action) => {
-        state.decisions.unshift(action.payload)
-        state.decisions.splice(10) // keep the newest 10
-      },
-      prepare: (decision) => ({ payload: { ...decision, at: new Date().toISOString() } }),
-    },
+  initialState: { queue: [], queueLoad: load, stats: [], statsLoad: load, decisions: [] },
+  reducers: {},
+  extraReducers: (builder) => {
+    tracked(builder, loadApprovalQueue, 'queueLoad', (state, events) => {
+      state.queue = events
+    })
+    tracked(builder, loadClubStats, 'statsLoad', (state, rows) => {
+      state.stats = rows
+    })
+    builder
+      .addCase(approveEvent.fulfilled, (state, action) => decided(state, action.payload, true, null))
+      .addCase(rejectEvent.fulfilled, (state, action) => decided(state, action.payload, false, action.payload.reviewNote))
   },
 })
 
-const { otherEventSaved, decisionRecorded } = adminSlice.actions
 export default adminSlice.reducer
 
-// ---- selectors: createSelector remembers the answer until its inputs change ----
-
-const selectOtherEvents = (state) => state.admin.otherEvents
+export const selectApprovalQueue = (state) => state.admin.queue
+export const selectQueueLoad = (state) => state.admin.queueLoad
+export const selectClubStats = (state) => state.admin.stats
+export const selectStatsLoad = (state) => state.admin.statsLoad
 export const selectDecisions = (state) => state.admin.decisions
-
-/** Every club's events, each with its club object attached. */
-export const selectAllEvents = createSelector([selectClubEvents, selectClub, selectOtherEvents], (clubEvents, club, others) => {
-  const clubById = Object.fromEntries(allClubs.map((c) => [c.id, c]))
-  const mine = clubEvents.map((e) => ({ ...e, clubId: club.id, submittedBy: e.submittedBy ?? codingClubSubmitter }))
-  return [...mine, ...others].map((e) => ({ ...e, club: clubById[e.clubId] }))
-})
-
-/** Waiting for approval, the event that starts soonest first (it is the most urgent). */
-export const selectApprovalQueue = createSelector([selectAllEvents], (events) =>
-  events.filter((e) => e.status === 'PENDING_APPROVAL').sort((a, b) => a.startTime.localeCompare(b.startTime)),
-)
-
-/** One row per club: published events, waiting, tickets sold and money collected. */
-export const selectClubStats = createSelector([selectAllEvents], (events) =>
-  allClubs.map((club) => {
-    const own = events.filter((e) => e.clubId === club.id)
-    const published = own.filter((e) => e.status === 'PUBLISHED')
-    return {
-      club,
-      published: published.length,
-      pending: own.filter((e) => e.status === 'PENDING_APPROVAL').length,
-      sold: published.reduce((n, e) => n + e.totalSeats - e.availableSeats, 0),
-      revenue: published.reduce((n, e) => n + (e.totalSeats - e.availableSeats) * e.price, 0),
-    }
-  }),
-)
-
-// ---- thunks: the same checks as EventService.approve / reject ----
-
-function reviewEvent(event, approve, reason) {
-  return (dispatch, getState) => {
-    if (!approve && !reason?.trim()) throw new Error('A reason is required to send an event back.')
-    const current = selectAllEvents(getState()).find((e) => e.id === event.id)
-    if (current?.status !== 'PENDING_APPROVAL') {
-      throw new Error(`Only events waiting for approval can be reviewed (this one is ${current?.status}).`)
-    }
-    const { club, clubId, submittedBy, ...stored } = current // drop the fields the selector added
-    const reviewed = approve
-      ? { ...stored, status: 'PUBLISHED', reviewNote: null }
-      : { ...stored, status: 'DRAFT', reviewNote: reason.trim() }
-
-    if (clubId === selectClub(getState()).id) dispatch(eventSaved(reviewed))
-    else dispatch(otherEventSaved({ ...reviewed, clubId, submittedBy }))
-
-    dispatch(decisionRecorded({ eventId: event.id, title: event.title, club, approved: approve, reason: approve ? null : reason.trim() }))
-  }
-}
-
-/** PENDING_APPROVAL -> PUBLISHED */
-export const approveEvent = (event) => reviewEvent(event, true)
-/** PENDING_APPROVAL -> DRAFT with a note for the organizer */
-export const rejectEvent = (event, reason) => reviewEvent(event, false, reason)

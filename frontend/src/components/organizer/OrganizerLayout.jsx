@@ -1,7 +1,11 @@
-import { useSelector } from 'react-redux'
+import { useEffect } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
 import { NavLink, Outlet } from 'react-router-dom'
 
-import { selectClub } from '../../store/organizerSlice'
+import { loadClubEvents, selectClub, selectOrganizer } from '../../store/organizerSlice'
+import Button from '../ui/Button'
+import EmptyState from '../ui/EmptyState'
+import { Skeleton } from '../ui/Loader'
 import { gradientFor } from '../../utils/format'
 
 const links = [
@@ -21,10 +25,10 @@ function Sidebar() {
   return (
     <aside className="lg:sticky lg:top-24 lg:self-start">
       <div className="mb-4 overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
-        <div className={`h-2 bg-gradient-to-r ${gradientFor(club.slug)}`} />
+        <div className={`h-2 bg-gradient-to-r ${gradientFor(club?.slug)}`} />
         <div className="p-4">
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Organizer</p>
-          <p className="font-bold text-slate-900 dark:text-white">{club.name}</p>
+          <p className="font-bold text-slate-900 dark:text-white">{club?.name ?? 'Loading…'}</p>
         </div>
       </div>
       {/* a row that scrolls sideways on phones, a column on laptops */}
@@ -37,13 +41,41 @@ function Sidebar() {
   )
 }
 
+/** Loading and error screens are shared by every organizer page. */
+function Content() {
+  const dispatch = useDispatch()
+  const { status, error } = useSelector(selectOrganizer)
+  if (status === 'failed') {
+    return <EmptyState title="Could not load your club's events" message={error}
+      action={<Button onClick={() => dispatch(loadClubEvents())}>Try again</Button>} />
+  }
+  if (status !== 'ready') {
+    return (
+      <div className="space-y-4">
+        <Skeleton className="h-10 w-1/2" />
+        <Skeleton className="h-28 w-full" />
+        <Skeleton className="h-20 w-full" />
+        <Skeleton className="h-20 w-full" />
+      </div>
+    )
+  }
+  return <Outlet />
+}
+
 /** Dashboard layout for the organizer area: club card + menu on the left, page on the right. */
 export default function OrganizerLayout() {
+  const dispatch = useDispatch()
+
+  // fresh data from the backend every time the organizer area opens (the admin may have approved something)
+  useEffect(() => {
+    dispatch(loadClubEvents())
+  }, [dispatch])
+
   return (
     <div className="grid gap-8 lg:grid-cols-[220px_1fr]">
       <Sidebar />
       <div className="min-w-0">
-        <Outlet />
+        <Content />
       </div>
     </div>
   )

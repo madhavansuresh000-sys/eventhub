@@ -9,6 +9,7 @@ import Card from '../../components/ui/Card'
 import EmptyState from '../../components/ui/EmptyState'
 import Modal from '../../components/ui/Modal'
 import StatCard from '../../components/ui/StatCard'
+import { notify } from '../../store/notificationsSlice'
 import { selectClub, selectClubEvents, submitEvent } from '../../store/organizerSlice'
 import { formatMoney, formatShortDate } from '../../utils/format'
 
@@ -56,6 +57,7 @@ export default function OrganizerDashboardPage() {
   const events = useSelector(selectClubEvents)
   const location = useLocation()
   const [toSubmit, setToSubmit] = useState(null)
+  const [sending, setSending] = useState(false)
   const [message, setMessage] = useState(location.state?.message ?? null)
 
   const published = events.filter((e) => e.status === 'PUBLISHED')
@@ -70,7 +72,7 @@ export default function OrganizerDashboardPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-white">{club.name}</h1>
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-white">{club?.name}</h1>
           <p className="mt-1 text-slate-600 dark:text-slate-400">Your club's events, sales and approvals.</p>
         </div>
         <Button to="/organizer/events/new">+ Create event</Button>
@@ -97,7 +99,7 @@ export default function OrganizerDashboardPage() {
       </section>
 
       <p className="text-xs text-slate-500">
-        Sample data for Phase 3. Phase 4 connects this page to the backend; Phase 5 shows it only to organizers.{' '}
+        Live data from the backend. Phase 5 shows this page only to the club's organizers.{' '}
         <Link to="/admin/approvals" className="underline">Admin approval queue</Link>
       </p>
 
@@ -108,11 +110,19 @@ export default function OrganizerDashboardPage() {
         footer={
           <>
             <Button variant="ghost" onClick={() => setToSubmit(null)}>Not yet</Button>
-            <Button onClick={() => {
-              dispatch(submitEvent(toSubmit.id))
-              setMessage(`"${toSubmit.title}" was sent to the admin for approval.`)
-              setToSubmit(null)
-            }}>Submit</Button>
+            <Button disabled={sending} onClick={async () => {
+              setSending(true)
+              try {
+                // unwrap(): wait for the server; throws the rejectWithValue payload if it said no
+                await dispatch(submitEvent(toSubmit.id)).unwrap()
+                setMessage(`"${toSubmit.title}" was sent to the admin for approval.`)
+              } catch (e) {
+                dispatch(notify(e.message, 'error'))
+              } finally {
+                setSending(false)
+                setToSubmit(null)
+              }
+            }}>{sending ? 'Sending…' : 'Submit'}</Button>
           </>
         }
       >

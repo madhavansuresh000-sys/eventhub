@@ -1,11 +1,14 @@
-import { useSelector } from 'react-redux'
+import { useEffect } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
 import { Link } from 'react-router-dom'
 
 import Badge from '../../components/ui/Badge'
 import Button from '../../components/ui/Button'
 import Card from '../../components/ui/Card'
+import EmptyState from '../../components/ui/EmptyState'
+import { Skeleton } from '../../components/ui/Loader'
 import StatCard from '../../components/ui/StatCard'
-import { selectApprovalQueue, selectClubStats, selectDecisions } from '../../store/adminSlice'
+import { loadClubStats, selectApprovalQueue, selectClubStats, selectDecisions, selectStatsLoad } from '../../store/adminSlice'
 import { formatMoney, formatShortDate, gradientFor } from '../../utils/format'
 
 const timeFormat = new Intl.DateTimeFormat('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true })
@@ -56,10 +59,28 @@ function ClubTable({ rows }) {
 }
 
 export default function AdminOverviewPage() {
-  const clubStats = useSelector(selectClubStats)
+  const dispatch = useDispatch()
+  const stats = useSelector(selectClubStats)
+  const { status, error } = useSelector(selectStatsLoad)
   const queue = useSelector(selectApprovalQueue)
   const decisions = useSelector(selectDecisions)
 
+  // fresh numbers every time the page opens
+  useEffect(() => {
+    dispatch(loadClubStats())
+  }, [dispatch])
+
+  if (status === 'failed') {
+    return <EmptyState title="Could not load the overview" message={error}
+      action={<Button onClick={() => dispatch(loadClubStats())}>Try again</Button>} />
+  }
+  if (stats.length === 0) return <Skeleton className="h-96 w-full" />
+
+  // API row -> the shape the table uses (revenue arrives as a JSON number, e.g. 34750.00)
+  const clubStats = stats.map((r) => ({
+    club: { id: r.clubId, name: r.clubName, slug: r.clubSlug },
+    published: r.published, pending: r.pending, sold: r.seatsSold, revenue: Number(r.revenue),
+  }))
   const total = (key) => clubStats.reduce((n, r) => n + r[key], 0)
 
   return (
@@ -123,7 +144,7 @@ export default function AdminOverviewPage() {
       </div>
 
       <p className="text-xs text-slate-500">
-        Sample data for Phase 3 (Coding Club numbers come from the organizer area). A later phase adds a real stats API; Phase 5 shows this page only to admins.
+        Live data from GET /api/admin/stats/clubs. Tickets sold = booked seats of published events (real bookings arrive in Phase 6). Phase 5 shows this page only to admins.
       </p>
     </div>
   )

@@ -3,15 +3,17 @@ import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate, useParams } from 'react-router-dom'
 
 import { fetchTags } from '../../api/events'
+import { fetchManagedEvent } from '../../api/organizer'
 import { Notice } from '../../components/auth/AuthCard'
 import EventStatusBadge from '../../components/organizer/EventStatusBadge'
 import Button from '../../components/ui/Button'
 import Card from '../../components/ui/Card'
 import EmptyState from '../../components/ui/EmptyState'
+import { Skeleton } from '../../components/ui/Loader'
 import { TextAreaField, TextField } from '../../components/ui/FormField'
-import useAsync from '../../hooks/useAsync'
+import useAsync, { describeError } from '../../hooks/useAsync'
 import useForm from '../../hooks/useForm'
-import { saveEvent, selectClubEvent } from '../../store/organizerSlice'
+import { saveEvent, selectOrganizer } from '../../store/organizerSlice'
 import { maxLength, notNegative, required, wholeNumberBetween } from '../../utils/validation'
 
 const MAX_TAGS = 5
@@ -69,22 +71,31 @@ function EventForm({ existing }) {
   // a ref, not state: it must be updated instantly, in the same click that submits the form
   const submitAfterSave = useRef(false)
 
+  // the API sends "2026-11-15T09:30:00"; a datetime-local box wants "2026-11-15T09:30"
   const initial = existing
-    ? { ...existing, totalSeats: String(existing.totalSeats), price: String(existing.price), description: existing.description ?? '' }
+    ? {
+        title: existing.title, description: existing.description ?? '', venue: existing.venue, tags: existing.tags,
+        startTime: existing.startTime.slice(0, 16), endTime: existing.endTime.slice(0, 16),
+        totalSeats: String(existing.totalSeats), price: String(existing.price),
+      }
     : empty
 
-  const { field, values, errors, setValue, handleSubmit, submitting } = useForm(initial, rules, async (v) => {
+  const { field, values, errors, setValue, handleSubmit, submitting } = useForm(initial, rules, async (v, { setServerErrors }) => {
+    setServerError(null)
+    const submit = submitAfterSave.current
+    const form = {
+      ...v, title: v.title.trim(), venue: v.venue.trim(), description: v.description.trim() || null,
+      totalSeats: Number(v.totalSeats), price: Number(v.price),
+    }
     try {
-      // a thunk: it checks the rules first and throws an Error if one is broken
-      const saved = dispatch(saveEvent(
-        { ...v, id: existing?.id, totalSeats: Number(v.totalSeats), price: Number(v.price), title: v.title.trim(), venue: v.venue.trim() },
-        { submit: submitAfterSave.current },
-      ))
-      navigate('/organizer', {
-        state: { message: submitAfterSave.current ?`"${saved.title}" was saved and sent for approval.` : `"${saved.title}" was saved as a draft.` },
-      })
+      // unwrap(): wait for the server; if it says no, throw its { message, fieldErrors }
+      const saved = await dispatch(saveEvent({ id: existing?.id, form, submit })).unwrap()
+      const message = submit ? `"${saved.title}" was saved and sent for approval.`
+        : saved.status === 'PUBLISHED' ? `Changes to "${saved.title}" are live.` : `"${saved.title}" was saved as a draft.`
+      navigate('/organizer', { state: { message } })
     } catch (e) {
       setServerError(e.message)
+      setServerErrors(e.fieldErrors ?? {}) // e.g. { startTime: 'startTime must be in the future' } under that box
     }
   })
 
@@ -128,7 +139,8 @@ function EventForm({ existing }) {
       <div className="flex flex-wrap justify-end gap-3">
         <Button variant="ghost" onClick={() => navigate('/organizer')}>Cancel</Button>
         <Button type="submit" variant="secondary" disabled={submitting} onClick={() => { submitAfterSave.current = false }}>
-          Save as draft
+          {/* saving keeps the status, so a published event stays published */}
+          {existing?.status === 'PUBLISHED' ? 'Save changes' : 'Save as draft'}
         </Button>
         {canSubmit && (
           <Button type="submit" disabled={submitting} onClick={() => { submitAfterSave.current = true }}>
@@ -142,10 +154,15 @@ function EventForm({ existing }) {
 
 export default function EventFormPage() {
   const { id } = useParams()
-  const existing = useSelector((state) => (id ? selectClubEvent(state, id) : null))
+  const { clubId } = useSelector(selectOrganizer)
+  // editing: load the event (any status) from the backend; creating: nothing to load
+  const { data, loading, error } = useAsync(() => (id ? fetchManagedEvent(id) : Promise.resolve(null)), [id])
+  const existing = data
 
-  if (id && !existing) {
-    return <EmptyState title="Event not found" message="It may belong to another club."
+  if (loading) return <Skeleton className="h-96 w-full" />
+  if (error || (existing && existing.club.id !== clubId)) {
+    return <EmptyState title="Event not found"
+      message={error ? describeError(error).message : 'It belongs to another club.'}
       action={<Button to="/organizer" variant="secondary">Back to overview</Button>} />
   }
   if (existing?.status === 'PENDING_APPROVAL') {

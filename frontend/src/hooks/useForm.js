@@ -6,14 +6,17 @@ import { validate } from '../utils/validation'
  * Form state + validation.
  * - errors appear after you leave a field (blur), or for every field when you press submit
  * - once shown, an error updates live while you type the fix
+ * - onValidSubmit(values, { setServerErrors }): setServerErrors({ title: '...' }) shows the backend's
+ *   answer under a field until that field is edited
  */
 export default function useForm(initialValues, rules, onValidSubmit) {
   const [values, setValues] = useState(initialValues)
   const [touched, setTouched] = useState({})
   const [submitting, setSubmitting] = useState(false)
+  const [serverErrors, setServerErrors] = useState({})
 
   const allErrors = validate(values, rules)
-  const errors = Object.fromEntries(Object.entries(allErrors).filter(([f]) => touched[f]))
+  const errors = { ...serverErrors, ...Object.fromEntries(Object.entries(allErrors).filter(([f]) => touched[f])) }
 
   const field = (name) => ({
     name,
@@ -23,6 +26,7 @@ export default function useForm(initialValues, rules, onValidSubmit) {
     onChange: (e) => {
       const { type, checked, value } = e.target
       setValues((v) => ({ ...v, [name]: type === 'checkbox' ? checked : value }))
+      setServerErrors(({ [name]: _fixed, ...rest }) => rest)
     },
     onBlur: () => setTouched((t) => ({ ...t, [name]: true })),
   })
@@ -37,7 +41,7 @@ export default function useForm(initialValues, rules, onValidSubmit) {
     }
     setSubmitting(true)
     try {
-      await onValidSubmit(values)
+      await onValidSubmit(values, { setServerErrors })
     } finally {
       setSubmitting(false)
     }

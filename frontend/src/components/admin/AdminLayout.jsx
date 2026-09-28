@@ -1,7 +1,8 @@
-import { useSelector } from 'react-redux'
+import { useEffect } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
 import { NavLink, Outlet } from 'react-router-dom'
 
-import { selectApprovalQueue } from '../../store/adminSlice'
+import { loadApprovalQueue, selectApprovalQueue } from '../../store/adminSlice'
 
 const linkClass = ({ isActive }) =>
   'flex items-center justify-between gap-3 whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium transition-colors ' +
@@ -38,6 +39,13 @@ function Sidebar() {
 
 /** Dashboard layout for the admin area, same shape as the organizer area. */
 export default function AdminLayout() {
+  const dispatch = useDispatch()
+
+  // the queue count in the menu needs the queue, whichever admin page opens first
+  useEffect(() => {
+    dispatch(loadApprovalQueue())
+  }, [dispatch])
+
   return (
     <div className="grid gap-8 lg:grid-cols-[220px_1fr]">
       <Sidebar />

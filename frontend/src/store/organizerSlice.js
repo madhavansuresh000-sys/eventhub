@@ -1,21 +1,73 @@
-import { createSlice } from '@reduxjs/toolkit'
+import { createAsyncThunk, createSlice } from '@reduxjs/toolkit'
 
-import { organizerClub, sampleClubEvents, sampleVolunteers } from '../data/sampleOrganizer'
+import { fetchClubs } from '../api/events'
+import { createEvent, fetchClubEvents, submitEventForApproval, updateEvent } from '../api/organizer'
+import { sampleVolunteers } from '../data/sampleVolunteers'
+import { describeError } from '../hooks/useAsync'
+import { approveEvent, rejectEvent } from './adminSlice'
 
 /**
- * The organizer's club, its events (every status) and volunteers (sample data until Phase 4).
- * Reducers only store results. The RULES (copied from the backend's EventService) live in the
- * thunks below: they check first and throw an Error, so the page can show the message.
+ * Which club the organizer runs. Phase 5 reads it from the logged-in user (club_members table);
+ * until then the demo organizer runs the Coding Club (id 1 in the database).
  */
+export const DEMO_ORGANIZER_CLUB_ID = 1
+
+// ---- async thunks: each one calls the API and has 3 outcomes: pending -> fulfilled / rejected ----
+// rejectWithValue(describeError(e)) keeps the backend's message and field errors for the page.
+
+/** The club + all its events (drafts too). */
+export const loadClubEvents = createAsyncThunk('organizer/loadClubEvents', async (_, { getState, rejectWithValue }) => {
+  const clubId = getState().organizer.clubId
+  try {
+    const [clubs, events] = await Promise.all([fetchClubs(), fetchClubEvents(clubId)])
+    return { club: clubs.find((c) => c.id === clubId) ?? null, events }
+  } catch (e) {
+    return rejectWithValue(describeError(e))
+  }
+})
+
+/**
+ * Create (no id) or update, then optionally submit for approval. The backend checks every rule
+ * (EventRequest + EventService); if one is broken the page gets { message, fieldErrors }.
+ */
+export const saveEvent = createAsyncThunk('organizer/saveEvent', async ({ id, form, submit }, { getState, rejectWithValue }) => {
+  const body = { ...form, clubId: getState().organizer.clubId }
+  try {
+    const saved = id ? await updateEvent(id, body) : await createEvent(body)
+    return submit ? await submitEventForApproval(saved.id) : saved
+  } catch (e) {
+    return rejectWithValue(describeError(e))
+  }
+})
+
+/** DRAFT -> PENDING_APPROVAL */
+export const submitEvent = createAsyncThunk('organizer/submitEvent', async (id, { rejectWithValue }) => {
+  try {
+    return await submitEventForApproval(id)
+  } catch (e) {
+    return rejectWithValue(describeError(e))
+  }
+})
+
+/** Put the event the server sent back into the list (replace, or add if it is new). */
+function upsert(state, event) {
+  const i = state.events.findIndex((e) => e.id === event.id)
+  if (i >= 0) state.events[i] = event
+  else state.events.push(event)
+  state.events.sort((a, b) => a.startTime.localeCompare(b.startTime))
+}
+
 const organizerSlice = createSlice({
   name: 'organizer',
-  initialState: { club: organizerClub, events: sampleClubEvents, volunteers: sampleVolunteers },
+  initialState: {
+    clubId: DEMO_ORGANIZER_CLUB_ID,
+    club: null,
+    events: [],
+    status: 'idle', // idle -> loading -> ready | failed
+    error: null,
+    volunteers: sampleVolunteers, // sample until volunteer accounts exist (Phase 5 users, Phase 7 check-in)
+  },
   reducers: {
-    eventSaved: (state, action) => {
-      const i = state.events.findIndex((e) => e.id === action.payload.id)
-      if (i >= 0) state.events[i] = action.payload
-      else state.events.push(action.payload)
-    },
     volunteerAdded: (state, action) => {
       const id = Math.max(0, ...state.volunteers.map((v) => v.id)) + 1
       state.volunteers.push({ ...action.payload, id, eventId: Number(action.payload.eventId) })
@@ -24,44 +76,38 @@ const organizerSlice = createSlice({
       state.volunteers = state.volunteers.filter((v) => v.id !== action.payload)
     },
   },
+  // extraReducers: react to thunks (ours and the admin's)
+  extraReducers: (builder) => {
+    builder
+      .addCase(loadClubEvents.pending, (state) => {
+        state.status = 'loading'
+        state.error = null
+      })
+      .addCase(loadClubEvents.fulfilled, (state, action) => {
+        state.status = 'ready'
+        state.club = action.payload.club
+        state.events = action.payload.events
+      })
+      .addCase(loadClubEvents.rejected, (state, action) => {
+        state.status = 'failed'
+        state.error = action.payload?.message ?? action.error.message
+      })
+      .addCase(saveEvent.fulfilled, (state, action) => upsert(state, action.payload))
+      .addCase(submitEvent.fulfilled, (state, action) => upsert(state, action.payload))
+      // the admin approved / sent back one of our events: show the new status without reloading
+      .addCase(approveEvent.fulfilled, (state, action) => {
+        if (state.events.some((e) => e.id === action.payload.id)) upsert(state, action.payload)
+      })
+      .addCase(rejectEvent.fulfilled, (state, action) => {
+        if (state.events.some((e) => e.id === action.payload.id)) upsert(state, action.payload)
+      })
+  },
 })
 
-export const { eventSaved, volunteerAdded, volunteerRemoved } = organizerSlice.actions
+export const { volunteerAdded, volunteerRemoved } = organizerSlice.actions
 export default organizerSlice.reducer
 
+export const selectOrganizer = (state) => state.organizer
 export const selectClub = (state) => state.organizer.club
 export const selectClubEvents = (state) => state.organizer.events
 export const selectVolunteers = (state) => state.organizer.volunteers
-export const selectClubEvent = (state, id) => state.organizer.events.find((e) => e.id === Number(id))
-
-// ---- thunks: dispatch(saveEvent(form)) runs this function with dispatch + getState ----
-
-/** Create (no id) or update. Returns the saved event. Mirrors EventService.create / update. */
-export const saveEvent = (form, { submit = false } = {}) => (dispatch, getState) => {
-  const events = selectClubEvents(getState())
-  const existing = form.id ? selectClubEvent(getState(), form.id) : null
-  if (existing?.status === 'PENDING_APPROVAL') {
-    throw new Error('This event is waiting for approval and cannot be edited.')
-  }
-  const booked = existing ? existing.totalSeats - existing.availableSeats : 0
-  if (form.totalSeats < booked) {
-    throw new Error(`Total seats cannot be less than the ${booked} seats already booked.`)
-  }
-  const event = {
-    ...existing,
-    ...form,
-    id: existing?.id ?? Math.max(...events.map((e) => e.id)) + 1,
-    availableSeats: form.totalSeats - booked,
-    status: submit ? 'PENDING_APPROVAL' : existing?.status ?? 'DRAFT',
-    reviewNote: submit ? null : existing?.reviewNote ?? null,
-  }
-  dispatch(eventSaved(event))
-  return event
-}
-
-/** DRAFT -> PENDING_APPROVAL. Mirrors EventService.submit. */
-export const submitEvent = (id) => (dispatch, getState) => {
-  const event = selectClubEvent(getState(), id)
-  if (event.status !== 'DRAFT') throw new Error(`Only drafts can be submitted (this one is ${event.status}).`)
-  dispatch(eventSaved({ ...event, status: 'PENDING_APPROVAL', reviewNote: null }))
-}

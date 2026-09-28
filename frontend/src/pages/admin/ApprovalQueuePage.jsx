@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 
 import Badge from '../../components/ui/Badge'
@@ -6,8 +6,9 @@ import Button from '../../components/ui/Button'
 import Card from '../../components/ui/Card'
 import EmptyState from '../../components/ui/EmptyState'
 import { TextAreaField } from '../../components/ui/FormField'
+import { Skeleton } from '../../components/ui/Loader'
 import Modal from '../../components/ui/Modal'
-import { approveEvent, rejectEvent, selectApprovalQueue } from '../../store/adminSlice'
+import { approveEvent, loadApprovalQueue, rejectEvent, selectApprovalQueue, selectQueueLoad } from '../../store/adminSlice'
 import { notify } from '../../store/notificationsSlice'
 import { daysUntil, emojiFor, formatPrice, formatShortDate, formatTimeRange, gradientFor } from '../../utils/format'
 
@@ -45,7 +46,7 @@ function QueueCard({ event, onApprove, onSendBack }) {
               <StartsIn iso={event.startTime} />
             </div>
             <p className="text-sm text-slate-500">
-              {event.club.name} · sent by {event.submittedBy}
+              {event.club.name}
             </p>
             <p className="mt-2 text-sm text-slate-700 dark:text-slate-300">{event.description}</p>
 
@@ -71,7 +72,7 @@ function QueueCard({ event, onApprove, onSendBack }) {
   )
 }
 
-function SendBackModal({ event, onClose, onConfirm }) {
+function SendBackModal({ event, onClose, onConfirm, busy }) {
   const [reason, setReason] = useState('')
   const [touched, setTouched] = useState(false)
 
@@ -93,7 +94,7 @@ function SendBackModal({ event, onClose, onConfirm }) {
       footer={
         <>
           <Button variant="ghost" onClick={onClose}>Cancel</Button>
-          <Button variant="danger" onClick={submit}>Send back</Button>
+          <Button variant="danger" onClick={submit} disabled={busy}>{busy ? 'Sending…' : 'Send back'}</Button>
         </>
       }
     >
@@ -129,8 +130,30 @@ function SendBackModal({ event, onClose, onConfirm }) {
 export default function ApprovalQueuePage() {
   const dispatch = useDispatch()
   const queue = useSelector(selectApprovalQueue)
+  const { status, error } = useSelector(selectQueueLoad)
   const [toApprove, setToApprove] = useState(null)
   const [toSendBack, setToSendBack] = useState(null)
+  const [busy, setBusy] = useState(false)
+
+  // always ask the server: an organizer may have submitted something since last time
+  useEffect(() => {
+    dispatch(loadApprovalQueue())
+  }, [dispatch])
+
+  /** Runs approve / send back, waits for the server, then shows a toast (green or red). */
+  const decide = async (thunkAction, successText, close) => {
+    setBusy(true)
+    try {
+      await dispatch(thunkAction).unwrap()
+      dispatch(notify(successText))
+    } catch (e) {
+      dispatch(notify(e.message, 'error'))
+      dispatch(loadApprovalQueue()) // someone else may have reviewed it already: refresh the list
+    } finally {
+      setBusy(false)
+      close()
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -141,7 +164,15 @@ export default function ApprovalQueuePage() {
         </p>
       </div>
 
-      {queue.length === 0 ? (
+      {status === 'failed' ? (
+        <EmptyState title="Could not load the queue" message={error}
+          action={<Button onClick={() => dispatch(loadApprovalQueue())}>Try again</Button>} />
+      ) : status === 'loading' && queue.length === 0 ? (
+        <div className="space-y-4">
+          <Skeleton className="h-64 w-full" />
+          <Skeleton className="h-64 w-full" />
+        </div>
+      ) : queue.length === 0 ? (
         <EmptyState
           title="All caught up"
           message="No events are waiting. New ones appear here when an organizer presses Submit for approval."
@@ -154,7 +185,7 @@ export default function ApprovalQueuePage() {
       )}
 
       <p className="text-xs text-slate-500">
-        Sample data for Phase 3. Phase 4 connects these buttons to POST /api/events/{'{id}'}/approve and /reject; Phase 5 shows this page only to admins.
+        Live data from the backend (POST /api/events/{'{id}'}/approve and /reject). Phase 5 shows this page only to admins.
       </p>
 
       <Modal
@@ -164,11 +195,11 @@ export default function ApprovalQueuePage() {
         footer={
           <>
             <Button variant="ghost" onClick={() => setToApprove(null)}>Cancel</Button>
-            <Button onClick={() => {
-              dispatch(approveEvent(toApprove))
-              dispatch(notify(`"${toApprove.title}" is now published. Students can book it.`))
-              setToApprove(null)
-            }}>Approve</Button>
+            <Button disabled={busy} onClick={() => decide(
+              approveEvent(toApprove),
+              `"${toApprove.title}" is now published. Students can book it.`,
+              () => setToApprove(null),
+            )}>{busy ? 'Approving…' : 'Approve'}</Button>
           </>
         }
       >
@@ -178,12 +209,13 @@ export default function ApprovalQueuePage() {
       {toSendBack && (
         <SendBackModal
           event={toSendBack}
+          busy={busy}
           onClose={() => setToSendBack(null)}
-          onConfirm={(reason) => {
-            dispatch(rejectEvent(toSendBack, reason))
-            dispatch(notify(`"${toSendBack.title}" was sent back to ${toSendBack.club.name} with your note.`))
-            setToSendBack(null)
-          }}
+          onConfirm={(reason) => decide(
+            rejectEvent({ event: toSendBack, reason }),
+            `"${toSendBack.title}" was sent back to ${toSendBack.club.name} with your note.`,
+            () => setToSendBack(null),
+          )}
         />
       )}
     </div>

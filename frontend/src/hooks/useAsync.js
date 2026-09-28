@@ -25,10 +25,13 @@ export default function useAsync(load, deps) {
   return state
 }
 
-/** Turns an Axios error into { status, message } using the backend's problem-details JSON. */
+/**
+ * Turns an Axios error into { status, message, fieldErrors } using the backend's problem-details JSON.
+ * fieldErrors is the "errors" map from GlobalExceptionHandler, e.g. { title: 'title is required' }.
+ */
 export function describeError(error) {
   const status = error?.response?.status
-  const detail = error?.response?.data?.detail
-  if (!status) return { status: 0, message: 'Cannot reach the server. Is the backend running?' }
-  return { status, message: detail || 'Something went wrong.' }
+  const data = error?.response?.data
+  if (!status) return { status: 0, message: 'Cannot reach the server. Is the backend running?', fieldErrors: {} }
+  return { status, message: data?.detail || 'Something went wrong.', fieldErrors: data?.errors ?? {} }
 }
