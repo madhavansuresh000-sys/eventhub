@@ -105,6 +105,37 @@ class EventControllerTest {
 			.andExpect(jsonPath("$.availableSeats").value(40));
 	}
 
+	/** Phase 2 "done when" check: submitting and approving an event changes its status correctly. */
+	@Test
+	void submitAndApproveFlow() throws Exception {
+		// id 5 is a DRAFT, so it is hidden from the public list
+		mvc.perform(get("/api/events").param("q", "Bootcamp"))
+			.andExpect(jsonPath("$.totalElements").value(0));
+
+		mvc.perform(post("/api/events/5/submit"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.status").value("PENDING_APPROVAL"));
+
+		mvc.perform(post("/api/events/5/approve"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.status").value("PUBLISHED"));
+
+		// now students can find it
+		mvc.perform(get("/api/events").param("q", "Bootcamp"))
+			.andExpect(jsonPath("$.totalElements").value(1));
+		mvc.perform(get("/api/events/5"))
+			.andExpect(status().isOk());
+	}
+
+	@Test
+	void rejectFlow() throws Exception {
+		mvc.perform(post("/api/events/17/reject").contentType(MediaType.APPLICATION_JSON)
+				.content("{\"reason\": \"Add safety instructions for the drone flight\"}"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.status").value("DRAFT"))
+			.andExpect(jsonPath("$.reviewNote").value("Add safety instructions for the drone flight"));
+	}
+
 	@Test
 	void clubsAndTagsForFilters() throws Exception {
 		mvc.perform(get("/api/clubs"))

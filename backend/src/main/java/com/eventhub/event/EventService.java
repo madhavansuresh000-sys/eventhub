@@ -1,5 +1,6 @@
 package com.eventhub.event;
 
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -130,6 +131,50 @@ public class EventService {
 		applyRequest(event, request);
 
 		return EventMapper.toDetail(event);
+	}
+
+	// ---------- Approval workflow ----------
+
+	/** Organizer: DRAFT -> PENDING_APPROVAL. Only future events can be submitted. */
+	@Transactional
+	public EventDetailResponse submit(Long id) {
+		Event event = findEvent(id);
+		if (!event.getStartTime().isAfter(LocalDateTime.now())) {
+			throw new BusinessRuleException("Event " + id + " has already started and cannot be submitted");
+		}
+		moveTo(event, EventStatus.PENDING_APPROVAL, "submit");
+		event.setReviewNote(null);
+		return EventMapper.toDetail(event);
+	}
+
+	/** Admin: PENDING_APPROVAL -> PUBLISHED. Students can now see it. */
+	@Transactional
+	public EventDetailResponse approve(Long id) {
+		Event event = findEvent(id);
+		moveTo(event, EventStatus.PUBLISHED, "approve");
+		event.setReviewNote(null);
+		return EventMapper.toDetail(event);
+	}
+
+	/** Admin: PENDING_APPROVAL -> back to DRAFT, with a reason for the organizer. */
+	@Transactional
+	public EventDetailResponse reject(Long id, String reason) {
+		if (reason == null || reason.isBlank()) {
+			throw new BusinessRuleException("A reason is required to send an event back");
+		}
+		Event event = findEvent(id);
+		moveTo(event, EventStatus.DRAFT, "reject");
+		event.setReviewNote(reason.trim());
+		return EventMapper.toDetail(event);
+	}
+
+	private void moveTo(Event event, EventStatus target, String action) {
+		EventStatus current = event.getStatus();
+		if (!current.canMoveTo(target)) {
+			throw new BusinessRuleException("Cannot " + action + " event " + event.getId()
+					+ ": it is " + current + " (allowed next: " + current.nextAllowed() + ")");
+		}
+		event.setStatus(target);
 	}
 
 	Event findEvent(Long id) {

@@ -19,6 +19,7 @@ import com.eventhub.event.dto.EventDetailResponse;
 import com.eventhub.event.dto.EventFilter;
 import com.eventhub.event.dto.EventRequest;
 import com.eventhub.event.dto.EventSummaryResponse;
+import com.eventhub.event.dto.ReviewRequest;
 
 import lombok.RequiredArgsConstructor;
 
@@ -62,6 +63,26 @@ public class EventController {
 	@PutMapping("/{id}")
 	public EventDetailResponse update(@PathVariable Long id, @RequestBody EventRequest request) {
 		return service.update(id, request);
+	}
+
+	// ---------- Approval workflow ----------
+
+	/** Organizer sends a DRAFT for review. */
+	@PostMapping("/{id}/submit")
+	public EventDetailResponse submit(@PathVariable Long id) {
+		return service.submit(id);
+	}
+
+	/** Admin publishes an event that is waiting for approval. */
+	@PostMapping("/{id}/approve")
+	public EventDetailResponse approve(@PathVariable Long id) {
+		return service.approve(id);
+	}
+
+	/** Admin sends it back to DRAFT. Body: {"reason": "Please add the venue map"} */
+	@PostMapping("/{id}/reject")
+	public EventDetailResponse reject(@PathVariable Long id, @RequestBody ReviewRequest review) {
+		return service.reject(id, review.reason());
 	}
 
 }

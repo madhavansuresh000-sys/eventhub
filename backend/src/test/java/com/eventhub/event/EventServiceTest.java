@@ -100,6 +100,67 @@ class EventServiceTest {
 			.hasMessage("totalSeats cannot be less than the 160 seats already booked");
 	}
 
+	// ---------- Approval workflow ----------
+
+	@Test
+	void submitThenApprovePublishes() {
+		// Spring Boot Bootcamp (id 5) is a DRAFT
+		assertThat(service.submit(5L).status()).isEqualTo(EventStatus.PENDING_APPROVAL);
+
+		EventDetailResponse approved = service.approve(5L);
+		assertThat(approved.status()).isEqualTo(EventStatus.PUBLISHED);
+		assertThat(approved.reviewNote()).isNull();
+	}
+
+	@Test
+	void rejectSendsBackToDraftWithReason() {
+		// Street Play Festival (id 9) is PENDING_APPROVAL
+		EventDetailResponse rejected = service.reject(9L, "  Please add the venue map  ");
+		assertThat(rejected.status()).isEqualTo(EventStatus.DRAFT);
+		assertThat(rejected.reviewNote()).isEqualTo("Please add the venue map");
+
+		// the organizer fixes it and submits again: the old note is cleared
+		EventDetailResponse resubmitted = service.submit(9L);
+		assertThat(resubmitted.status()).isEqualTo(EventStatus.PENDING_APPROVAL);
+		assertThat(resubmitted.reviewNote()).isNull();
+	}
+
+	@Test
+	void cannotSkipTheReview() {
+		assertThatThrownBy(() -> service.approve(5L))
+			.isInstanceOf(BusinessRuleException.class)
+			.hasMessage("Cannot approve event 5: it is DRAFT (allowed next: [PENDING_APPROVAL])");
+	}
+
+	@Test
+	void publishedEventCannotBeSubmittedOrRejected() {
+		assertThatThrownBy(() -> service.submit(1L))
+			.isInstanceOf(BusinessRuleException.class)
+			.hasMessageContaining("it is PUBLISHED");
+		assertThatThrownBy(() -> service.reject(1L, "no"))
+			.isInstanceOf(BusinessRuleException.class)
+			.hasMessageContaining("Cannot reject event 1");
+	}
+
+	@Test
+	void rejectNeedsAReason() {
+		assertThatThrownBy(() -> service.reject(9L, "   "))
+			.isInstanceOf(BusinessRuleException.class)
+			.hasMessage("A reason is required to send an event back");
+	}
+
+	@Test
+	void pastEventCannotBeSubmitted() {
+		LocalDateTime yesterday = LocalDateTime.now().minusDays(1);
+		EventRequest past = new EventRequest(1L, "Old Talk", null, "Hall", yesterday, yesterday.plusHours(1),
+				10, BigDecimal.ZERO, List.of());
+		Long id = service.create(past).id();
+
+		assertThatThrownBy(() -> service.submit(id))
+			.isInstanceOf(BusinessRuleException.class)
+			.hasMessageContaining("has already started");
+	}
+
 	@Test
 	void cannotEditEventWaitingForApproval() {
 		// Street Play Festival (id 9) is PENDING_APPROVAL
