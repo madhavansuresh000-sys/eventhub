@@ -28,7 +28,8 @@ class HealthControllerTest {
 
 	@Test
 	void otherUrlsNeedLogin() throws Exception {
-		mockMvc.perform(get("/api/admin/stats"))
+		// /api/admin/** is temporarily open in Phase 4; bookings stay locked
+		mockMvc.perform(get("/api/bookings"))
 			.andExpect(status().isUnauthorized());
 	}
 

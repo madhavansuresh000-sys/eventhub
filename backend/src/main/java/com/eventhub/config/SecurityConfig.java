@@ -4,6 +4,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.web.SecurityFilterChain;
@@ -20,6 +21,8 @@ public class SecurityConfig {
 	SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 		http
 			.csrf(AbstractHttpConfigurer::disable)
+			// use the rules from CorsConfig (browser calls from other addresses)
+			.cors(Customizer.withDefaults())
 			.authorizeHttpRequests(auth -> auth
 				.requestMatchers("/api/health", "/actuator/health",
 						"/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
@@ -28,6 +31,8 @@ public class SecurityConfig {
 				// TEMPORARY (Phase 2): create/update/approve are open so they can be tested in Postman.
 				// Phase 5 restricts them to logged-in organizers and admins.
 				.requestMatchers("/api/events/**").permitAll()
+				// TEMPORARY (Phase 4): organizer and admin screens. Phase 5: hasRole("ORGANIZER") / hasRole("ADMIN").
+				.requestMatchers("/api/organizer/**", "/api/admin/**").permitAll()
 				.anyRequest().authenticated())
 			// not logged in -> 401 (instead of the default 403)
 			.exceptionHandling(ex -> ex.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)));

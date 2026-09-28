@@ -20,6 +20,7 @@ import com.eventhub.common.BadRequestException;
 import com.eventhub.common.BusinessRuleException;
 import com.eventhub.common.PageResponse;
 import com.eventhub.common.ResourceNotFoundException;
+import com.eventhub.event.dto.ClubStatsResponse;
 import com.eventhub.event.dto.EventDetailResponse;
 import com.eventhub.event.dto.EventFilter;
 import com.eventhub.event.dto.EventMapper;
@@ -94,6 +95,29 @@ public class EventService {
 	@Transactional(readOnly = true)
 	public EventDetailResponse getEvent(Long id) {
 		return EventMapper.toDetail(findEvent(id));
+	}
+
+	/** Organizer dashboard: every event of one club (drafts, waiting, published), soonest first. */
+	@Transactional(readOnly = true)
+	public List<EventDetailResponse> clubEvents(Long clubId) {
+		if (!clubs.existsById(clubId)) {
+			throw new ResourceNotFoundException("Club", clubId);
+		}
+		return events.findByClubIdOrderByStartTimeAsc(clubId).stream().map(EventMapper::toDetail).toList();
+	}
+
+	/** Admin approval queue: events waiting for approval, the one that starts soonest first. */
+	@Transactional(readOnly = true)
+	public List<EventDetailResponse> pendingEvents() {
+		return events.findByStatusOrderByStartTimeAsc(EventStatus.PENDING_APPROVAL).stream()
+			.map(EventMapper::toDetail)
+			.toList();
+	}
+
+	/** Admin overview: published / waiting / seats sold / money per club. */
+	@Transactional(readOnly = true)
+	public List<ClubStatsResponse> clubStats() {
+		return events.clubStats(EventStatus.PUBLISHED, EventStatus.PENDING_APPROVAL);
 	}
 
 	/** New events always start as DRAFT with every seat free. */
