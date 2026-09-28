@@ -1,0 +1,48 @@
+/**
+ * Small validation rules. Each returns an error message, or '' when the value is fine.
+ * The backend checks the same things again (never trust the browser alone).
+ */
+
+export const required = (label) => (v) => (String(v ?? '').trim() ? '' : `${label} is required`)
+
+const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
+export const email = (v) => (!v || EMAIL.test(v.trim()) ? '' : 'Enter a valid email, e.g. name@college.edu')
+
+export const minLength = (n, label) => (v) => (!v || v.length >= n ? '' : `${label} must be at least ${n} characters`)
+
+export const strongPassword = (v) => {
+  if (!v) return ''
+  if (v.length < 8) return 'Use at least 8 characters'
+  if (!/[a-zA-Z]/.test(v) || !/\d/.test(v)) return 'Use both letters and numbers'
+  return ''
+}
+
+/** Compares with another field, e.g. "confirm password" must equal "password". */
+export const matches = (otherField, message) => (v, values) => (v === values[otherField] ? '' : message)
+
+export const mustBeTrue = (message) => (v) => (v ? '' : message)
+
+/** Runs the rules of every field; returns { field: firstError } for fields with a problem. */
+export function validate(values, rules) {
+  const errors = {}
+  for (const [field, fieldRules] of Object.entries(rules)) {
+    for (const rule of fieldRules) {
+      const message = rule(values[field], values)
+      if (message) {
+        errors[field] = message
+        break
+      }
+    }
+  }
+  return errors
+}
+
+/** 0-4 score for the password strength meter. */
+export function passwordScore(v = '') {
+  let score = 0
+  if (v.length >= 8) score++
+  if (v.length >= 12) score++
+  if (/[a-z]/.test(v) && /[A-Z]/.test(v)) score++
+  if (/\d/.test(v) && /[^a-zA-Z0-9]/.test(v)) score++
+  return score
+}

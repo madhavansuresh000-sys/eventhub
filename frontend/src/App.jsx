@@ -7,13 +7,13 @@ import ComingSoonPage from './pages/ComingSoonPage'
 import EventDetailsPage from './pages/EventDetailsPage'
 import EventsPage from './pages/EventsPage'
 import HomePage from './pages/HomePage'
+import LoginPage from './pages/LoginPage'
 import NotFoundPage from './pages/NotFoundPage'
+import RegisterPage from './pages/RegisterPage'
 import StyleGuidePage from './pages/StyleGuidePage'
 
 /** Pages still to build, with the Phase 3 step that builds them. */
 const upcoming = [
-  { path: '/login', title: 'Login', step: 5, description: 'Email and password with form checks.' },
-  { path: '/register', title: 'Register', step: 5, description: 'Create a student account.' },
   { path: '/checkout/:eventId', title: 'Checkout', step: 6, description: 'Your seat is held for 10 minutes.' },
   { path: '/my-tickets', title: 'My tickets', step: 6, description: 'Confirmed, waitlisted and attended events.' },
   { path: '/tickets/:id', title: 'Ticket', step: 6, description: 'Your QR code for the gate.' },
@@ -36,6 +36,12 @@ export default function App() {
         <Route path="events" element={<EventsPage />} />
         <Route path="events/:id" element={<EventDetailsPage />} />
         <Route path="clubs/:slug" element={<ClubPage />} />
+        <Route path="login" element={<LoginPage />} />
+        <Route path="register" element={<RegisterPage />} />
+        <Route
+          path="forgot-password"
+          element={<ComingSoonPage title="Forgot password" step="5 (backend in Phase 5)" description="We will email you a reset link." />}
+        />
         <Route path="about" element={<AboutPage />} />
         <Route path="style-guide" element={<StyleGuidePage />} />
         {upcoming.map((p) => (
