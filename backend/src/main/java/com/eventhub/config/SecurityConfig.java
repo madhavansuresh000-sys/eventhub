@@ -40,7 +40,9 @@ public class SecurityConfig {
 			// sessionAuthenticationStrategy: Spring normally makes a NEW CSRF token whenever someone "logs in".
 			// Without server sessions it thinks every request with our JWT cookie is a new login, so the token
 			// changed on every request and a second request sent at the same moment could fail. Keep one token.
-			.csrf(csrf -> csrf.spa().sessionAuthenticationStrategy((authentication, request, response) -> { }))
+			.csrf(csrf -> csrf.spa().sessionAuthenticationStrategy((authentication, request, response) -> { })
+				// Stripe's server has no CSRF cookie; the Stripe-Signature header proves the message instead
+				.ignoringRequestMatchers("/api/payments/stripe/webhook"))
 			.addFilterAfter(new CsrfCookieFilter(), CsrfFilter.class)
 			// use the rules from CorsConfig (browser calls from other addresses)
 			.cors(Customizer.withDefaults())
@@ -49,6 +51,7 @@ public class SecurityConfig {
 				.requestMatchers("/api/health", "/actuator/health",
 						"/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
 				.requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/logout", "/api/auth/me").permitAll()
+				.requestMatchers(HttpMethod.POST, "/api/payments/stripe/webhook").permitAll() // checked by its signature
 				// public catalogue: anyone can browse events, clubs and tags
 				.requestMatchers(HttpMethod.GET, "/api/events/**", "/api/clubs/**", "/api/tags").permitAll()
 				// admin work

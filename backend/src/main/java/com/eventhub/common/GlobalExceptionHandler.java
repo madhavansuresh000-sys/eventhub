@@ -23,6 +23,7 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 
 import com.eventhub.auth.CurrentUser;
 import com.eventhub.auth.TooManyLoginAttemptsException;
+import com.eventhub.payment.PaymentProviderException;
 
 /**
  * Turns every error into clean JSON (RFC 9457 "problem details"), e.g.
@@ -94,6 +95,13 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 		return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
 			.header(HttpHeaders.RETRY_AFTER, String.valueOf(ex.getRetryAfter().toSeconds()))
 			.body(ProblemDetail.forStatusAndDetail(HttpStatus.TOO_MANY_REQUESTS, ex.getMessage()));
+	}
+
+	/** Stripe (or the network to it) failed: 502 Bad Gateway = "the service behind us did not answer well". */
+	@ExceptionHandler(PaymentProviderException.class)
+	ProblemDetail handlePaymentProvider(PaymentProviderException ex) {
+		log.error("Payment provider error", ex);
+		return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_GATEWAY, ex.getMessage());
 	}
 
 	@ExceptionHandler(DisabledException.class)

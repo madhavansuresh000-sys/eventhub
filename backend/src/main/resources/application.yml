@@ -32,6 +32,17 @@ app:
   login:
     max-failures: 5         # wrong passwords before the account+address is locked for a while
     lock-time: 15m
+  booking:
+    hold-time: 10m          # how long seats are kept for a student who has not paid yet
+    expiry-check: 60s       # how often the job frees expired holds
+  scheduling:
+    enabled: true           # the every-minute job (tests switch it off)
+  # where the React app runs: Stripe sends the student back here after paying
+  frontend-url: ${FRONTEND_URL:http://localhost:5173}
+  stripe:
+    # from .env; both empty = the built-in test payment page is used (dev only)
+    secret-key: ${STRIPE_SECRET_KEY:}
+    webhook-secret: ${STRIPE_WEBHOOK_SECRET:}
 
 ---
 # ---------- dev: your laptop (MySQL + Mailpit in Docker) ----------
