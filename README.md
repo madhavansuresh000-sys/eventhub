@@ -27,5 +27,19 @@ frontend/              React app              (localhost:5173)
 Phase_0 … Phase_9/     Checklist for each phase
 ```
 
+## How to run (on your laptop)
+1. **Database + email inbox** (Docker Desktop must be running):
+   ```
+   copy .env.example .env      (first time only; then set your own passwords)
+   docker compose up -d
+   ```
+   MySQL on `localhost:3306`, Mailpit inbox at http://localhost:8025
+2. **Backend:** open `backend/` in IntelliJ and run `EventhubApplication` (or `mvnw spring-boot:run`)
+   - Health: http://localhost:8080/api/health
+   - API docs: http://localhost:8080/swagger-ui.html
+3. **Frontend:** in `frontend/` run `npm install` (first time) and `npm run dev`, then open http://localhost:5173
+
 ## Status
-🚧 Phase 1: Creating the project
+![CI](https://github.com/madhavansuresh000-sys/eventhub/actions/workflows/ci.yml/badge.svg)
+
+🚧 Phase 1: Creating the project (steps 1-8 done, step 9 paper sketches pending)

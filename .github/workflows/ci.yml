@@ -1,0 +1,57 @@
+# CI = GitHub builds and tests EventHub automatically on every push.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  backend:
+    name: Backend (Spring Boot)
+    runs-on: ubuntu-latest
+    services:
+      # a throwaway MySQL just for the tests
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_DATABASE: eventhub
+          MYSQL_USER: eventhub
+          MYSQL_PASSWORD: ci-password
+          MYSQL_ROOT_PASSWORD: ci-root-password
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost -u root -pci-root-password"
+          --health-interval=10s --health-timeout=5s --health-retries=10
+    env:
+      MYSQL_USER: eventhub
+      MYSQL_PASSWORD: ci-password
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+      - run: ./mvnw -B verify
+
+  frontend:
+    name: Frontend (React)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build
