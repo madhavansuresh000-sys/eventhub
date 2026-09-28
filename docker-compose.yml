@@ -15,6 +15,7 @@ services:
       - "3306:3306"
     volumes:
       - mysql-data:/var/lib/mysql   # keeps your data when the container stops
+      - ./docker/mysql-init:/docker-entrypoint-initdb.d:ro   # creates eventhub_test on first start
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
       interval: 10s

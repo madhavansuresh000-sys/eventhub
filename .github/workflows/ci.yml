@@ -15,7 +15,7 @@ jobs:
       mysql:
         image: mysql:8.4
         env:
-          MYSQL_DATABASE: eventhub
+          MYSQL_DATABASE: eventhub_test   # tests use the test database
           MYSQL_USER: eventhub
           MYSQL_PASSWORD: ci-password
           MYSQL_ROOT_PASSWORD: ci-root-password
