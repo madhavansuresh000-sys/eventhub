@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.eventhub.common.BadRequestException;
 import com.eventhub.common.BusinessRuleException;
 import com.eventhub.common.ResourceNotFoundException;
 import com.eventhub.event.dto.EventDetailResponse;
@@ -56,14 +57,14 @@ class EventServiceTest {
 				BigDecimal.ZERO, List.of());
 
 		assertThatThrownBy(() -> service.create(bad))
-			.isInstanceOf(BusinessRuleException.class)
+			.isInstanceOf(BadRequestException.class)
 			.hasMessageContaining("endTime must be after startTime");
 	}
 
 	@Test
 	void unknownTagsAreRejected() {
 		assertThatThrownBy(() -> service.create(request(10, List.of("tech", "cooking"))))
-			.isInstanceOf(BusinessRuleException.class)
+			.isInstanceOf(BadRequestException.class)
 			.hasMessage("Unknown tags: cooking");
 	}
 
@@ -145,7 +146,7 @@ class EventServiceTest {
 	@Test
 	void rejectNeedsAReason() {
 		assertThatThrownBy(() -> service.reject(9L, "   "))
-			.isInstanceOf(BusinessRuleException.class)
+			.isInstanceOf(BadRequestException.class)
 			.hasMessage("A reason is required to send an event back");
 	}
 

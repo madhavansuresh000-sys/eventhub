@@ -21,6 +21,8 @@ import com.eventhub.event.dto.EventRequest;
 import com.eventhub.event.dto.EventSummaryResponse;
 import com.eventhub.event.dto.ReviewRequest;
 
+import jakarta.validation.Valid;
+
 import lombok.RequiredArgsConstructor;
 
 /** Event URLs. The controller only reads the request and calls the service. */
@@ -55,13 +57,13 @@ public class EventController {
 
 	/** Creates a DRAFT event. Returns 201 Created with the new event's URL. */
 	@PostMapping
-	public ResponseEntity<EventDetailResponse> create(@RequestBody EventRequest request) {
+	public ResponseEntity<EventDetailResponse> create(@Valid @RequestBody EventRequest request) {
 		EventDetailResponse created = service.create(request);
 		return ResponseEntity.created(URI.create("/api/events/" + created.id())).body(created);
 	}
 
 	@PutMapping("/{id}")
-	public EventDetailResponse update(@PathVariable Long id, @RequestBody EventRequest request) {
+	public EventDetailResponse update(@PathVariable Long id, @Valid @RequestBody EventRequest request) {
 		return service.update(id, request);
 	}
 
@@ -81,7 +83,7 @@ public class EventController {
 
 	/** Admin sends it back to DRAFT. Body: {"reason": "Please add the venue map"} */
 	@PostMapping("/{id}/reject")
-	public EventDetailResponse reject(@PathVariable Long id, @RequestBody ReviewRequest review) {
+	public EventDetailResponse reject(@PathVariable Long id, @Valid @RequestBody ReviewRequest review) {
 		return service.reject(id, review.reason());
 	}
 

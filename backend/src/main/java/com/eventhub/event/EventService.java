@@ -160,7 +160,7 @@ public class EventService {
 	@Transactional
 	public EventDetailResponse reject(Long id, String reason) {
 		if (reason == null || reason.isBlank()) {
-			throw new BusinessRuleException("A reason is required to send an event back");
+			throw new BadRequestException("A reason is required to send an event back");
 		}
 		Event event = findEvent(id);
 		moveTo(event, EventStatus.DRAFT, "reject");
@@ -199,7 +199,7 @@ public class EventService {
 
 	private void checkTimes(EventRequest request) {
 		if (!request.endTime().isAfter(request.startTime())) {
-			throw new BusinessRuleException("endTime must be after startTime");
+			throw new BadRequestException("endTime must be after startTime");
 		}
 	}
 
@@ -214,7 +214,7 @@ public class EventService {
 		List<Tag> found = tags.findByNameIn(wanted);
 		if (found.size() != wanted.size()) {
 			found.forEach(t -> wanted.remove(t.getName()));
-			throw new BusinessRuleException("Unknown tags: " + String.join(", ", wanted));
+			throw new BadRequestException("Unknown tags: " + String.join(", ", wanted));
 		}
 		return new HashSet<>(found);
 	}

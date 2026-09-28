@@ -38,9 +38,10 @@ public record EventRequest(
 		@NotNull(message = "endTime is required")
 		LocalDateTime endTime,
 
+		@NotNull(message = "totalSeats is required")
 		@Min(value = 1, message = "totalSeats must be at least 1")
 		@Max(value = 10000, message = "totalSeats must be at most 10000")
-		int totalSeats,
+		Integer totalSeats,
 
 		@NotNull(message = "price is required")
 		@DecimalMin(value = "0.00", message = "price cannot be negative")
