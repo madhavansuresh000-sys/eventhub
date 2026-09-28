@@ -45,7 +45,12 @@ const tagEmoji = {
   tech: '💻', coding: '👩‍💻', workshop: '🛠️', music: '🎵', dance: '💃', sports: '🏏',
   robotics: '🤖', career: '💼', arts: '🎨', competition: '🏆',
 }
-export const emojiFor = (tags = []) => tagEmoji[tags.find((t) => tagEmoji[t])] ?? '🎟️'
+/** Most specific tags first, so an event always gets the same emoji whatever order its tags come in. */
+const emojiPriority = ['dance', 'music', 'robotics', 'sports', 'arts', 'career', 'coding', 'workshop', 'tech', 'competition']
+export function emojiFor(tags = []) {
+  const best = emojiPriority.find((t) => tags.includes(t))
+  return tagEmoji[best] ?? '🎟️'
+}
 
 /** A different gradient per club, so posters are easy to tell apart. Full class names for Tailwind. */
 const clubGradients = {

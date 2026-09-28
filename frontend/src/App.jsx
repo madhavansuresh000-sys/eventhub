@@ -2,23 +2,24 @@ import { Route, Routes } from 'react-router-dom'
 
 import Layout from './components/layout/Layout'
 import AboutPage from './pages/AboutPage'
+import CertificatesPage from './pages/CertificatesPage'
+import CertificateViewPage from './pages/CertificateViewPage'
+import CheckoutPage from './pages/CheckoutPage'
 import ClubPage from './pages/ClubPage'
 import ComingSoonPage from './pages/ComingSoonPage'
 import EventDetailsPage from './pages/EventDetailsPage'
 import EventsPage from './pages/EventsPage'
 import HomePage from './pages/HomePage'
 import LoginPage from './pages/LoginPage'
+import MyTicketsPage from './pages/MyTicketsPage'
 import NotFoundPage from './pages/NotFoundPage'
 import RegisterPage from './pages/RegisterPage'
+import TicketPage from './pages/TicketPage'
+import WaitlistPage from './pages/WaitlistPage'
 import StyleGuidePage from './pages/StyleGuidePage'
 
 /** Pages still to build, with the Phase 3 step that builds them. */
 const upcoming = [
-  { path: '/checkout/:eventId', title: 'Checkout', step: 6, description: 'Your seat is held for 10 minutes.' },
-  { path: '/my-tickets', title: 'My tickets', step: 6, description: 'Confirmed, waitlisted and attended events.' },
-  { path: '/tickets/:id', title: 'Ticket', step: 6, description: 'Your QR code for the gate.' },
-  { path: '/waitlist', title: 'My waitlist', step: 6, description: 'Where you are in the queue.' },
-  { path: '/certificates', title: 'Certificates', step: 6, description: 'Download certificates for events you attended.' },
   { path: '/organizer', title: 'My club', step: 7, description: 'Organizer dashboard.' },
   { path: '/organizer/events/new', title: 'Create event', step: 7, description: 'The event form.' },
   { path: '/organizer/events/:id/edit', title: 'Edit event', step: 7, description: 'Change an event.' },
@@ -36,6 +37,12 @@ export default function App() {
         <Route path="events" element={<EventsPage />} />
         <Route path="events/:id" element={<EventDetailsPage />} />
         <Route path="clubs/:slug" element={<ClubPage />} />
+        <Route path="checkout/:eventId" element={<CheckoutPage />} />
+        <Route path="my-tickets" element={<MyTicketsPage />} />
+        <Route path="tickets/:id" element={<TicketPage />} />
+        <Route path="waitlist" element={<WaitlistPage />} />
+        <Route path="certificates" element={<CertificatesPage />} />
+        <Route path="certificates/:id" element={<CertificateViewPage />} />
         <Route path="login" element={<LoginPage />} />
         <Route path="register" element={<RegisterPage />} />
         <Route
