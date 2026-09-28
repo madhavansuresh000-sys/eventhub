@@ -45,6 +45,8 @@ Automated tests (`mvnw test`) use a separate database, `eventhub_test`, so your 
 ## Status
 ![CI](https://github.com/madhavansuresh000-sys/eventhub/actions/workflows/ci.yml/badge.svg)
 
+✅ Phase 0: Foundations — complete (28 Sep 2026): Java console app, JS page, SQL practice (`Phase_0_Foundations/practice/`)
+
 ✅ Phase 1: Creating the project — complete (28 Sep 2026). Sketches: `docs/sketches/`
 
 ✅ Phase 2: Backend — complete (28 Sep 2026): 9 tables, event search/filter/pagination, approval workflow, clean JSON errors, 44 tests, Postman collection
