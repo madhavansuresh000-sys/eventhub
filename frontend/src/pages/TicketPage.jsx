@@ -1,8 +1,7 @@
-import { QRCodeSVG } from 'qrcode.react'
 import { useSelector } from 'react-redux'
 import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom'
 
-import { fetchBooking, toTicket } from '../api/bookings'
+import { fetchBooking, qrImageUrl, toTicket } from '../api/bookings'
 
 import { Notice } from '../components/auth/AuthCard'
 import TicketStatusBadge from '../components/tickets/TicketStatusBadge'
@@ -71,11 +70,14 @@ export default function TicketPage() {
           <div className="flex flex-col items-center gap-2">
             <div className={`rounded-2xl bg-white p-3 ring-1 ring-slate-200 ${cancelled ? 'opacity-25 grayscale' : ''}`}>
               {/* white box on purpose: scanners need dark squares on a light background, even in dark mode */}
-              <QRCodeSVG value={ticket.code} size={168} level="M" title={`QR code for ticket ${ticket.code}`} />
+              {/* drawn by the server (ZXing); it holds only the random ticket code */}
+              <img src={qrImageUrl(ticket.id)} width={168} height={168} alt={`QR code for ticket ${ticket.code}`} />
             </div>
             <p className="font-mono text-sm font-semibold tracking-wider text-slate-700 dark:text-slate-300">{ticket.code}</p>
             {cancelled && <p className="text-sm font-semibold text-red-600">This ticket is not valid ({ticket.status.toLowerCase()})</p>}
-            {ticket.status === 'ATTENDED' && <p className="text-sm font-semibold text-brand-600 dark:text-brand-400">✓ Checked in at the gate</p>}
+            {ticket.status === 'ATTENDED' && (
+              <p className="text-sm font-semibold text-brand-600 dark:text-brand-400">✓ Used at the gate, {formatTime(ticket.checkedInAt)}</p>
+            )}
           </div>
         </div>
       </article>

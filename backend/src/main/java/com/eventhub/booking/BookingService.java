@@ -407,6 +407,9 @@ public class BookingService {
 			if (!booking.getStatus().holdsSeats()) {
 				throw new BusinessRuleException("This booking is already " + booking.getStatus().name().toLowerCase() + ".");
 			}
+			if (booking.getCheckedInAt() != null) {
+				throw new BusinessRuleException("This ticket was already used at the gate, so it cannot be cancelled.");
+			}
 			if (booking.getStatus() == BookingStatus.CONFIRMED && !booking.getEvent().getStartTime().isAfter(now)) {
 				throw new BusinessRuleException("The event has already started, so this booking cannot be cancelled.");
 			}

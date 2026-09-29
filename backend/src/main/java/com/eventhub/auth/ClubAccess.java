@@ -42,6 +42,12 @@ public class ClubAccess {
 		return has(clubId, ClubRole.VOLUNTEER) || has(clubId, ClubRole.ORGANIZER);
 	}
 
+	/** May the logged-in user scan tickets of this event? Volunteers and organizers of the event's club. */
+	@Transactional(readOnly = true)
+	public boolean canScanEvent(Long eventId) {
+		return events.findClubIdById(eventId).map(this::canScan).orElse(false);
+	}
+
 	private boolean has(Long clubId, ClubRole role) {
 		return clubId != null && CurrentUser.get()
 			.map(user -> members.existsByClubIdAndUserIdAndClubRole(clubId, user.id(), role))

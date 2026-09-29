@@ -3,6 +3,8 @@ package com.eventhub.booking;
 import java.net.URI;
 import java.util.List;
 
+import org.springframework.http.CacheControl;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,6 +18,7 @@ import com.eventhub.auth.CurrentUser;
 import com.eventhub.booking.dto.BookingRequest;
 import com.eventhub.booking.dto.BookingResponse;
 import com.eventhub.booking.dto.CheckoutResponse;
+import com.eventhub.gate.QrCodeService;
 
 import jakarta.validation.Valid;
 
@@ -31,6 +34,8 @@ import lombok.RequiredArgsConstructor;
 public class BookingController {
 
 	private final BookingService service;
+
+	private final QrCodeService qr;
 
 	/** Hold seats: 201 with the booking (HELD with a timer, or CONFIRMED for a free event). */
 	@PostMapping
@@ -48,6 +53,18 @@ public class BookingController {
 	@GetMapping("/{id}")
 	public BookingResponse get(@AuthenticationPrincipal CurrentUser user, @PathVariable Long id) {
 		return service.get(user.id(), id);
+	}
+
+	/**
+	 * The ticket's QR code as a picture (Phase 7). Only for your own booking (someone else's id = 404).
+	 * "private": the browser may keep it, but shared caches (proxies) must not.
+	 */
+	@GetMapping(value = "/{id}/qr.png", produces = MediaType.IMAGE_PNG_VALUE)
+	public ResponseEntity<byte[]> qrCode(@AuthenticationPrincipal CurrentUser user, @PathVariable Long id) {
+		String code = service.get(user.id(), id).ticketCode();
+		return ResponseEntity.ok()
+			.cacheControl(CacheControl.noCache().cachePrivate())
+			.body(qr.png(code, 320));
 	}
 
 	/** Start paying for a HELD booking: answers with the payment page to send the student to. */

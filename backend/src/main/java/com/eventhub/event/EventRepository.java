@@ -47,6 +47,11 @@ public interface EventRepository extends JpaRepository<Event, Long>, JpaSpecific
 	@EntityGraph(attributePaths = "club")
 	List<Event> findByStatusOrderByStartTimeAsc(EventStatus status);
 
+	/** Gate scanner: the published events of these clubs that have not ended yet, soonest first. */
+	@EntityGraph(attributePaths = "club")
+	List<Event> findByClubIdInAndStatusAndEndTimeAfterOrderByStartTimeAsc(java.util.Collection<Long> clubIds,
+			EventStatus status, java.time.LocalDateTime after);
+
 	/** Organizer dashboard: all of one club's events, whatever their status. */
 	@EntityGraph(attributePaths = "club")
 	List<Event> findByClubIdOrderByStartTimeAsc(Long clubId);

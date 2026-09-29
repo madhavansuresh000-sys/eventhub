@@ -18,8 +18,8 @@ import { loadWaitlist, selectOpenWaitlist } from '../store/studentSlice'
 import { formatPrice, formatShortDate } from '../utils/format'
 
 const filters = [
-  { key: 'upcoming', label: 'Upcoming', match: (t, now) => ['CONFIRMED', 'HELD'].includes(t.status) && new Date(t.startTime) >= now },
-  { key: 'past', label: 'Past', match: (t, now) => t.status === 'CONFIRMED' && new Date(t.startTime) < now },
+  { key: 'upcoming', label: 'Upcoming', match: (t, now) => ['CONFIRMED', 'HELD', 'ATTENDED'].includes(t.status) && new Date(t.startTime) >= now },
+  { key: 'past', label: 'Past', match: (t, now) => ['CONFIRMED', 'ATTENDED'].includes(t.status) && new Date(t.startTime) < now },
   { key: 'cancelled', label: 'Cancelled', match: (t) => ['CANCELLED', 'EXPIRED'].includes(t.status) },
 ]
 
@@ -37,7 +37,7 @@ function TicketRow({ ticket, onCancel }) {
       </div>
       <div className="flex flex-wrap gap-2">
         {held && <Button to={`/checkout/${ticket.id}`} size="sm">Pay now</Button>}
-        {ticket.status === 'CONFIRMED' && <Button to={`/tickets/${ticket.id}`} size="sm">Show QR ticket</Button>}
+        {['CONFIRMED', 'ATTENDED'].includes(ticket.status) && <Button to={`/tickets/${ticket.id}`} size="sm">Show QR ticket</Button>}
         {ticket.canCancel && <Button variant="secondary" size="sm" onClick={() => onCancel(ticket)}>Cancel</Button>}
       </div>
     </Card>

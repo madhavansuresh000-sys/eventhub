@@ -38,6 +38,9 @@ function EventRow({ event, onSubmit }) {
         </div>
         <div className="flex flex-wrap gap-2">
           {event.status === 'PUBLISHED' && <Button to={`/events/${event.id}`} size="sm" variant="ghost">View</Button>}
+          {event.status === 'PUBLISHED' && new Date(event.endTime ?? event.startTime) > new Date() && (
+            <Button to={`/scanner?event=${event.id}`} size="sm" variant="ghost">Gate / live count</Button>
+          )}
           {event.status !== 'PENDING_APPROVAL' && <Button to={`/organizer/events/${event.id}/edit`} size="sm" variant="secondary">Edit</Button>}
           {event.status === 'DRAFT' && <Button size="sm" onClick={() => onSubmit(event)}>Submit for approval</Button>}
         </div>

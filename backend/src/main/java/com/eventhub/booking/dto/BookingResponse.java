@@ -25,6 +25,7 @@ public record BookingResponse(
 		LocalDateTime createdAt,
 		LocalDateTime confirmedAt,
 		LocalDateTime cancelledAt,
+		LocalDateTime checkedInAt,
 		boolean canCancel,
 		EventInfo event) {
 
@@ -44,9 +45,9 @@ public record BookingResponse(
 				? Math.max(0, Duration.between(now, b.getHoldExpiresAt()).toSeconds())
 				: 0;
 		boolean canCancel = b.getStatus() == BookingStatus.HELD
-				|| (b.getStatus() == BookingStatus.CONFIRMED && e.getStartTime().isAfter(now));
+				|| (b.getStatus() == BookingStatus.CONFIRMED && e.getStartTime().isAfter(now) && b.getCheckedInAt() == null);
 		return new BookingResponse(b.getId(), b.getStatus(), b.getQuantity(), b.getAmount(), b.getTicketCode(),
-				b.getHoldExpiresAt(), secondsLeft, b.getCreatedAt(), b.getConfirmedAt(), b.getCancelledAt(), canCancel,
+				b.getHoldExpiresAt(), secondsLeft, b.getCreatedAt(), b.getConfirmedAt(), b.getCancelledAt(), b.getCheckedInAt(), canCancel,
 				EventInfo.of(e));
 	}
 

@@ -17,6 +17,9 @@ export const fetchBooking = (id) => api.get(`/bookings/${id}`).then((r) => r.dat
 /** -> { provider: 'STRIPE' | 'FAKE', sessionId, redirectUrl } : send the student to redirectUrl */
 export const payBooking = (id) => api.post(`/bookings/${id}/pay`).then((r) => r.data)
 
+/** The ticket's QR picture, drawn by the server (ZXing). Used as <img src>: the login cookie goes along. */
+export const qrImageUrl = (id) => `/api/bookings/${id}/qr.png`
+
 export const cancelBooking = (id) => api.post(`/bookings/${id}/cancel`).then((r) => r.data)
 
 /** Back from Stripe: the server asks Stripe "paid?" and confirms (in case the webhook is late). */
@@ -34,7 +37,8 @@ export function toTicket(b) {
   return {
     id: b.id,
     code: b.ticketCode,
-    status: b.status,
+    status: b.checkedInAt ? 'ATTENDED' : b.status, // scanned at the gate (Phase 7)
+    checkedInAt: b.checkedInAt,
     quantity: b.quantity,
     amount: Number(b.amount),
     price: Number(b.event.price),

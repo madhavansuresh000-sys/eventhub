@@ -73,6 +73,15 @@ public class Booking {
 	@Column(name = "cancelled_at")
 	private LocalDateTime cancelledAt;
 
+	/** Scanned at the gate (Phase 7). Set once, by a conditional UPDATE - see BookingRepository.markCheckedIn. */
+	@Column(name = "checked_in_at")
+	private LocalDateTime checkedInAt;
+
+	/** The volunteer / organizer who scanned it. */
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "checked_in_by")
+	private User checkedInBy;
+
 	/** When the day-before reminder was sent (sent once). */
 	@Column(name = "reminder_sent_at")
 	private LocalDateTime reminderSentAt;
