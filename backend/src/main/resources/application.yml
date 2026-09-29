@@ -21,6 +21,11 @@ management:
     web:
       exposure:
         include: health,info
+  endpoint:
+    health:
+      # everyone sees only "UP"/"DOWN"; the admin also sees database, mail and disk details
+      show-details: when-authorized
+      roles: ADMIN
 
 springdoc:
   swagger-ui:

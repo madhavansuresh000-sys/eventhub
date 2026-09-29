@@ -36,7 +36,7 @@ Phase_0 … Phase_9/     Checklist for each phase
    MySQL on `localhost:3306`, Mailpit inbox at http://localhost:8025
 2. **Backend:** open `backend/` in IntelliJ and run `EventhubApplication` (or `mvnw spring-boot:run`)
    - Health: http://localhost:8080/api/health
-   - API docs: http://localhost:8080/swagger-ui.html
+   - API docs: http://localhost:8080/swagger-ui.html (admin only: log in as the admin on the React app first)
 3. **Frontend:** in `frontend/` run `npm install` (first time) and `npm run dev`, then open http://localhost:5173
 4. **Try the API in Postman:** Import → `postman/EventHub.postman_collection.json` → Run collection (25 requests with checks)
 

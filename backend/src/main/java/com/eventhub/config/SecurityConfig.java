@@ -21,7 +21,7 @@ import com.eventhub.auth.SecurityProblems;
  *
  *   visitors   : browse events, clubs and tags; register; log in
  *   logged in  : everything else (organizer URLs also check the club in @PreAuthorize, see ClubAccess)
- *   ADMIN only : /api/admin/**, approve and reject
+ *   ADMIN only : /api/admin/**, approve and reject, Swagger (/swagger-ui.html) and Actuator (except /actuator/health)
  *
  * Like the college gate: the JwtCookieFilter reads your ID card, these rules decide which rooms it opens.
  */
@@ -48,8 +48,12 @@ public class SecurityConfig {
 			.cors(Customizer.withDefaults())
 			.addFilterBefore(new JwtCookieFilter(jwtService), UsernamePasswordAuthenticationFilter.class)
 			.authorizeHttpRequests(auth -> auth
-				.requestMatchers("/api/health", "/actuator/health",
-						"/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
+				// health checks for the hosting platform (Phase 9): only "UP" / "DOWN", no details
+				.requestMatchers("/api/health", "/actuator/health").permitAll()
+				// Phase 8 step 4: the API map (Swagger) and the other Actuator pages tell an attacker a lot
+				// (every URL, versions, settings), so only the admin may open them. The admin's login cookie
+				// also works on :8080 (cookies are per host name, not per port): log in on the React app first.
+				.requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**", "/actuator/**").hasRole("ADMIN")
 				.requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/logout", "/api/auth/me").permitAll()
 				.requestMatchers(HttpMethod.POST, "/api/payments/stripe/webhook").permitAll() // checked by its signature
 				// public catalogue: anyone can browse events, clubs and tags

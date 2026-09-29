@@ -112,4 +112,30 @@ class SecurityRulesTest {
 			.andExpect(status().isForbidden());
 	}
 
+
+	// ---------- Phase 8 step 4: the API map and Actuator are for the admin only ----------
+
+	@Test
+	void swaggerAndActuatorAreForTheAdminOnly() throws Exception {
+		for (String url : new String[] { "/v3/api-docs", "/swagger-ui.html", "/actuator/info" }) {
+			mvc.perform(get(url)).andExpect(status().isUnauthorized());                                  // visitor
+			mvc.perform(get(url).with(accounts.as(accounts.student()))).andExpect(status().isForbidden());
+			mvc.perform(get(url).with(accounts.as(accounts.organizerOf(1L)))).andExpect(status().isForbidden());
+		}
+		mvc.perform(get("/v3/api-docs").with(accounts.as(accounts.admin())))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.info.title").value("EventHub API"));
+		mvc.perform(get("/actuator/info").with(accounts.as(accounts.admin()))).andExpect(status().isOk());
+	}
+
+	@Test
+	void healthIsPublicButItsDetailsAreForTheAdmin() throws Exception {
+		mvc.perform(get("/actuator/health"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.status").value("UP"))
+			.andExpect(jsonPath("$.components").doesNotExist()); // no database / disk details for visitors
+		mvc.perform(get("/actuator/health").with(accounts.as(accounts.admin())))
+			.andExpect(jsonPath("$.components.db.status").value("UP"));
+	}
+
 }
