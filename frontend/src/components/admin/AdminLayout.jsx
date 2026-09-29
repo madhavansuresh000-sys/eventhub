@@ -32,6 +32,7 @@ function Sidebar() {
             </span>
           )}
         </NavLink>
+        <NavLink to="/admin/analytics" className={linkClass}>Analytics</NavLink>
       </nav>
     </aside>
   )

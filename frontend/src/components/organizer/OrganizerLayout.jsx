@@ -12,6 +12,7 @@ import { gradientFor } from '../../utils/format'
 const links = [
   { to: '/organizer', label: 'Overview', end: true },
   { to: '/organizer/events/new', label: 'Create event' },
+  { to: '/organizer/analytics', label: 'Analytics' },
   { to: '/organizer/volunteers', label: 'Volunteers' },
 ]
 

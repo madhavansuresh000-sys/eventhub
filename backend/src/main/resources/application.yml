@@ -10,6 +10,11 @@ spring:
     open-in-view: false
   flyway:
     enabled: true
+  cache:
+    # Phase 7 step 7: dashboard numbers are kept in memory for 60 s (see analytics/AnalyticsService)
+    cache-names: analytics
+    caffeine:
+      spec: maximumSize=500,expireAfterWrite=60s
 
 management:
   endpoints:

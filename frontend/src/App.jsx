@@ -4,10 +4,12 @@ import AdminLayout from './components/admin/AdminLayout'
 import RequireAuth from './components/auth/RequireAuth'
 import Layout from './components/layout/Layout'
 import OrganizerLayout from './components/organizer/OrganizerLayout'
+import AdminAnalyticsPage from './pages/admin/AdminAnalyticsPage'
 import AdminOverviewPage from './pages/admin/AdminOverviewPage'
 import ApprovalQueuePage from './pages/admin/ApprovalQueuePage'
 import EventFeedbackPage from './pages/organizer/EventFeedbackPage'
 import EventFormPage from './pages/organizer/EventFormPage'
+import OrganizerAnalyticsPage from './pages/organizer/OrganizerAnalyticsPage'
 import OrganizerDashboardPage from './pages/organizer/OrganizerDashboardPage'
 import VolunteersPage from './pages/organizer/VolunteersPage'
 import AboutPage from './pages/AboutPage'
@@ -60,6 +62,7 @@ export default function App() {
             <Route path="events/:id/edit" element={<EventFormPage />} />
             <Route path="events/:id/feedback" element={<EventFeedbackPage />} />
             <Route path="volunteers" element={<VolunteersPage />} />
+            <Route path="analytics" element={<OrganizerAnalyticsPage />} />
           </Route>
         </Route>
         {/* admins */}
@@ -67,6 +70,7 @@ export default function App() {
           <Route path="admin" element={<AdminLayout />}>
             <Route index element={<AdminOverviewPage />} />
             <Route path="approvals" element={<ApprovalQueuePage />} />
+            <Route path="analytics" element={<AdminAnalyticsPage />} />
           </Route>
         </Route>
         {/* volunteers and organizers at the gate */}

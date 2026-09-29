@@ -32,6 +32,19 @@
   html.dark {
     color-scheme: dark;
   }
+  /* chart colours (Recharts draws SVG, so it reads CSS variables, not Tailwind classes); dark = own steps */
+  :root {
+    --chart-mark: #4f46e5;   /* brand-600 */
+    --chart-grid: #e2e8f0;   /* slate-200 */
+    --chart-axis: #64748b;   /* slate-500 */
+    --chart-surface: #ffffff;
+  }
+  html.dark {
+    --chart-mark: #6366f1;   /* brand-500 (checked with the dataviz palette validator) */
+    --chart-grid: #1e293b;   /* slate-800 */
+    --chart-axis: #94a3b8;   /* slate-400 */
+    --chart-surface: #0f172a; /* slate-900 */
+  }
   :focus-visible {
     @apply outline-2 outline-offset-2 outline-brand-500;
   }
