@@ -26,6 +26,7 @@ import RegisterPage from './pages/RegisterPage'
 import ScannerPage from './pages/ScannerPage'
 import TestPaymentPage from './pages/TestPaymentPage'
 import TicketPage from './pages/TicketPage'
+import VerifyCertificatePage from './pages/VerifyCertificatePage'
 import WaitlistPage from './pages/WaitlistPage'
 import StyleGuidePage from './pages/StyleGuidePage'
 import { canScan, isAdmin, isOrganizer } from './store/authSlice'
@@ -48,7 +49,7 @@ export default function App() {
           <Route path="tickets/:id" element={<TicketPage />} />
           <Route path="waitlist" element={<WaitlistPage />} />
           <Route path="certificates" element={<CertificatesPage />} />
-          <Route path="certificates/:id" element={<CertificateViewPage />} />
+          <Route path="certificates/:number" element={<CertificateViewPage />} />
         </Route>
         {/* organizers of a club */}
         <Route element={<RequireAuth allow={isOrganizer} what="the organizer area" />}>
@@ -77,6 +78,9 @@ export default function App() {
           element={<ComingSoonPage title="Forgot password" step="later (password reset by email)" description="We will email you a reset link." />}
         />
         <Route path="about" element={<AboutPage />} />
+        {/* public: anyone can check a certificate number */}
+        <Route path="verify" element={<VerifyCertificatePage />} />
+        <Route path="verify/:number" element={<VerifyCertificatePage />} />
         <Route path="style-guide" element={<StyleGuidePage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Route>

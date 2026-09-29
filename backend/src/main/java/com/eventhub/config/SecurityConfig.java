@@ -54,6 +54,8 @@ public class SecurityConfig {
 				.requestMatchers(HttpMethod.POST, "/api/payments/stripe/webhook").permitAll() // checked by its signature
 				// public catalogue: anyone can browse events, clubs and tags
 				.requestMatchers(HttpMethod.GET, "/api/events/**", "/api/clubs/**", "/api/tags").permitAll()
+				// anyone (a company checking a resume) can verify a certificate number
+				.requestMatchers(HttpMethod.GET, "/api/certificates/verify/*").permitAll()
 				// admin work
 				.requestMatchers("/api/admin/**").hasRole("ADMIN")
 				.requestMatchers(HttpMethod.POST, "/api/events/*/approve", "/api/events/*/reject").hasRole("ADMIN")

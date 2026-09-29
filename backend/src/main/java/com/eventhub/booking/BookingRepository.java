@@ -52,6 +52,11 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
 			+ " from Booking b where b.event.id = :eventId and b.status = com.eventhub.booking.BookingStatus.CONFIRMED")
 	List<Object[]> gateCounts(@Param("eventId") Long eventId);
 
+	/** Certificates: my tickets that were scanned at the gate, of events that are over. */
+	@Query("select b.id from Booking b where b.user.id = :userId and b.status = com.eventhub.booking.BookingStatus.CONFIRMED"
+			+ " and b.checkedInAt is not null and b.event.endTime < :now")
+	List<Long> findIdsEarningCertificate(@Param("userId") Long userId, @Param("now") LocalDateTime now);
+
 	long countByEventIdAndStatusIn(Long eventId, List<BookingStatus> statuses);
 
 }
