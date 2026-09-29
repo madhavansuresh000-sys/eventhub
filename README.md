@@ -51,4 +51,22 @@ Automated tests (`mvnw test`) start their own throwaway MySQL with Testcontainer
 
 ✅ Phase 2: Backend — complete (28 Sep 2026): 9 tables, event search/filter/pagination, approval workflow, clean JSON errors, 44 tests, Postman collection
 
-🚧 Next: Phase 3 — Frontend
+✅ Phase 3: Frontend — complete (28 Sep 2026): React 19 + Tailwind 4 + Redux Toolkit, 25 pages, dark mode, mobile
+
+✅ Phase 4: Connecting — complete (28 Sep 2026): organizer and admin pages on the real API, CORS
+
+✅ Phase 5: Login & roles — complete (28 Sep 2026): JWT in an httpOnly cookie, CSRF, club roles, login lock, audit log
+
+✅ Phase 6: Bookings & payments — complete (29 Sep 2026): seat holds, optimistic locking (100 threads / 10 seats test), Stripe Checkout or a built-in test page, idempotent webhooks
+
+✅ Phase 7: Signature features — complete (29 Sep 2026): smart waitlist, email + in-app notifications, QR gate check-in, PDF certificates + public verify page, feedback stars, analytics dashboard (cached)
+
+✅ Phase 8: Testing & polish — complete (29 Sep 2026): 133 backend tests (Testcontainers MySQL, Mockito unit tests, 91% service coverage), 12 React tests (Vitest + Testing Library), Swagger/Actuator admin-only, contrast + mobile fixes, code splitting
+
+🚧 Next: Phase 9 — Launch
+
+## Known limitations (practice project)
+- **Volunteers page** (organizer area) still shows sample names. Real volunteers are club members with the VOLUNTEER role (they can already use the gate scanner); a page to add/remove them was left out on purpose.
+- **Forgot password** is not built (the page says so).
+- **Stripe** was only tested with mocks (unit tests), never against real Stripe; the live card test moved to the main project, TriVoKo.
+- Login lock (5 wrong passwords) and the analytics cache live in memory: fine for one server, a shared store (e.g. Redis) would be needed for several.
