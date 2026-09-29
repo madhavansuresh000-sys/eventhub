@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { Suspense, useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { NavLink, Outlet } from 'react-router-dom'
 
@@ -6,7 +6,7 @@ import { clubsWithRole, selectUser } from '../../store/authSlice'
 import { clubSelected, loadClubEvents, selectClub, selectOrganizer } from '../../store/organizerSlice'
 import Button from '../ui/Button'
 import EmptyState from '../ui/EmptyState'
-import { Skeleton } from '../ui/Loader'
+import { Skeleton, Spinner } from '../ui/Loader'
 import { gradientFor } from '../../utils/format'
 
 const links = [
@@ -85,7 +85,11 @@ function Content() {
       </div>
     )
   }
-  return <Outlet />
+  return (
+    <Suspense fallback={<Spinner />}>
+      <Outlet />
+    </Suspense>
+  )
 }
 
 /** Dashboard layout for the organizer area: club card + menu on the left, page on the right. */

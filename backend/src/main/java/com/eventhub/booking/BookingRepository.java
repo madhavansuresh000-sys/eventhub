@@ -57,6 +57,4 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
 			+ " and b.checkedInAt is not null and b.event.endTime < :now")
 	List<Long> findIdsEarningCertificate(@Param("userId") Long userId, @Param("now") LocalDateTime now);
 
-	long countByEventIdAndStatusIn(Long eventId, List<BookingStatus> statuses);
-
 }

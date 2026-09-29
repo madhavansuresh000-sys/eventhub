@@ -1,17 +1,10 @@
+import { lazy } from 'react'
 import { Route, Routes } from 'react-router-dom'
 
 import AdminLayout from './components/admin/AdminLayout'
 import RequireAuth from './components/auth/RequireAuth'
 import Layout from './components/layout/Layout'
 import OrganizerLayout from './components/organizer/OrganizerLayout'
-import AdminAnalyticsPage from './pages/admin/AdminAnalyticsPage'
-import AdminOverviewPage from './pages/admin/AdminOverviewPage'
-import ApprovalQueuePage from './pages/admin/ApprovalQueuePage'
-import EventFeedbackPage from './pages/organizer/EventFeedbackPage'
-import EventFormPage from './pages/organizer/EventFormPage'
-import OrganizerAnalyticsPage from './pages/organizer/OrganizerAnalyticsPage'
-import OrganizerDashboardPage from './pages/organizer/OrganizerDashboardPage'
-import VolunteersPage from './pages/organizer/VolunteersPage'
 import AboutPage from './pages/AboutPage'
 import CertificatesPage from './pages/CertificatesPage'
 import CertificateViewPage from './pages/CertificateViewPage'
@@ -26,13 +19,25 @@ import MyTicketsPage from './pages/MyTicketsPage'
 import NotFoundPage from './pages/NotFoundPage'
 import PaymentResultPage from './pages/PaymentResultPage'
 import RegisterPage from './pages/RegisterPage'
-import ScannerPage from './pages/ScannerPage'
 import TestPaymentPage from './pages/TestPaymentPage'
 import TicketPage from './pages/TicketPage'
 import VerifyCertificatePage from './pages/VerifyCertificatePage'
 import WaitlistPage from './pages/WaitlistPage'
-import StyleGuidePage from './pages/StyleGuidePage'
 import { canScan, isAdmin, isOrganizer } from './store/authSlice'
+
+// Loaded only when someone opens them (React.lazy = code splitting): a student browsing events never
+// downloads the charts (Recharts), the camera scanner or the organizer/admin screens.
+// <Suspense> in Layout / OrganizerLayout / AdminLayout shows a spinner while a page's file loads.
+const AdminAnalyticsPage = lazy(() => import('./pages/admin/AdminAnalyticsPage'))
+const AdminOverviewPage = lazy(() => import('./pages/admin/AdminOverviewPage'))
+const ApprovalQueuePage = lazy(() => import('./pages/admin/ApprovalQueuePage'))
+const EventFeedbackPage = lazy(() => import('./pages/organizer/EventFeedbackPage'))
+const EventFormPage = lazy(() => import('./pages/organizer/EventFormPage'))
+const OrganizerAnalyticsPage = lazy(() => import('./pages/organizer/OrganizerAnalyticsPage'))
+const OrganizerDashboardPage = lazy(() => import('./pages/organizer/OrganizerDashboardPage'))
+const VolunteersPage = lazy(() => import('./pages/organizer/VolunteersPage'))
+const ScannerPage = lazy(() => import('./pages/ScannerPage'))
+const StyleGuidePage = lazy(() => import('./pages/StyleGuidePage'))
 
 export default function App() {
   return (
@@ -81,7 +86,7 @@ export default function App() {
         <Route path="register" element={<RegisterPage />} />
         <Route
           path="forgot-password"
-          element={<ComingSoonPage title="Forgot password" step="later (password reset by email)" description="We will email you a reset link." />}
+          element={<ComingSoonPage title="Forgot password" description="Password reset by email is not built yet. Please ask the Student Affairs Office to reset it." />}
         />
         <Route path="about" element={<AboutPage />} />
         {/* public: anyone can check a certificate number */}

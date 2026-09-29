@@ -17,8 +17,6 @@ public interface WaitlistEntryRepository extends JpaRepository<WaitlistEntry, Lo
 	/** "You are #3": how many are waiting in front of me. */
 	long countByEventIdAndStatusAndIdLessThan(Long eventId, WaitlistStatus status, Long id);
 
-	long countByEventIdAndStatus(Long eventId, WaitlistStatus status);
-
 	Optional<WaitlistEntry> findFirstByUserIdAndEventIdAndStatusIn(Long userId, Long eventId,
 			List<WaitlistStatus> statuses);
 

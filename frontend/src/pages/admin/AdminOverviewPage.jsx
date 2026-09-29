@@ -156,7 +156,7 @@ export default function AdminOverviewPage() {
       </div>
 
       <p className="text-xs text-slate-500 dark:text-slate-400">
-        Live data from GET /api/admin/stats/clubs. Tickets sold = booked seats of published events (real bookings arrive in Phase 6). Activity from GET /api/admin/audit. Admins only.
+        Live data from GET /api/admin/stats/clubs. Tickets sold = seats taken in published events (including seats held for checkout); money is an estimate (seats × price) - see Analytics for the exact amounts paid. Activity from GET /api/admin/audit. Admins only.
       </p>
     </div>
   )

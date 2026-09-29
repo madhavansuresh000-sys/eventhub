@@ -1,8 +1,9 @@
-import { useEffect } from 'react'
+import { Suspense, useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { NavLink, Outlet } from 'react-router-dom'
 
 import { loadApprovalQueue, selectApprovalQueue } from '../../store/adminSlice'
+import { Spinner } from '../ui/Loader'
 
 const linkClass = ({ isActive }) =>
   'flex items-center justify-between gap-3 whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium transition-colors ' +
@@ -51,7 +52,9 @@ export default function AdminLayout() {
     <div className="grid gap-8 lg:grid-cols-[220px_1fr]">
       <Sidebar />
       <div className="min-w-0">
-        <Outlet />
+        <Suspense fallback={<Spinner />}>
+          <Outlet />
+        </Suspense>
       </div>
     </div>
   )
