@@ -25,7 +25,7 @@ function DayTooltip({ active, payload, format }) {
   const point = payload[0].payload
   return (
     <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm shadow-lg dark:border-slate-700 dark:bg-slate-900">
-      <p className="text-slate-500">{longDayFormat.format(toDay(point.date))}</p>
+      <p className="text-slate-500 dark:text-slate-400">{longDayFormat.format(toDay(point.date))}</p>
       <p className="font-bold text-slate-900 dark:text-white">{format(payload[0].value)}</p>
     </div>
   )
@@ -61,10 +61,10 @@ function DayTable({ perDay }) {
       <summary className="cursor-pointer py-1 text-slate-600 hover:underline dark:text-slate-400">Show the numbers as a table</summary>
       <Card className="mt-2 overflow-x-auto">
         {withSales.length === 0 ? (
-          <p className="p-4 text-slate-500">No tickets sold in this period.</p>
+          <p className="p-4 text-slate-500 dark:text-slate-400">No tickets sold in this period.</p>
         ) : (
           <table className="w-full text-left">
-            <thead className="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-500 dark:border-slate-800">
+            <thead className="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400 dark:border-slate-800">
               <tr>
                 <th scope="col" className="px-4 py-2 font-semibold">Day</th>
                 <th scope="col" className="px-4 py-2 text-right font-semibold">Tickets</th>
@@ -95,7 +95,7 @@ function EventTable({ events }) {
   return (
     <Card className="overflow-x-auto">
       <table className="w-full min-w-[640px] text-left text-sm">
-        <thead className="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-500 dark:border-slate-800">
+        <thead className="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400 dark:border-slate-800">
           <tr>
             <th scope="col" className="px-4 py-3 font-semibold">Event</th>
             <th scope="col" className="px-4 py-3 font-semibold">Sold</th>
@@ -109,7 +109,7 @@ function EventTable({ events }) {
             <tr key={e.eventId}>
               <th scope="row" className="px-4 py-3 font-normal">
                 <span className="block font-medium text-slate-900 dark:text-white">{e.title}</span>
-                <span className="text-xs text-slate-500">{formatShortDate(e.startTime)}</span>
+                <span className="text-xs text-slate-500 dark:text-slate-400">{formatShortDate(e.startTime)}</span>
               </th>
               <td className="px-4 py-3">
                 <div className="flex items-center gap-3">
@@ -123,12 +123,12 @@ function EventTable({ events }) {
               <td className="px-4 py-3 text-right tabular-nums">
                 {!e.started ? <span className="text-slate-400" title="The gate is not open yet">not started</span>
                   : e.ticketsSold === 0 ? <span className="text-slate-400">—</span>
-                    : <>{e.checkedIn} <span className="text-slate-500">({percent(e.checkedIn / e.ticketsSold)})</span></>}
+                    : <>{e.checkedIn} <span className="text-slate-500 dark:text-slate-400">({percent(e.checkedIn / e.ticketsSold)})</span></>}
               </td>
               <td className="px-4 py-3 text-right tabular-nums">{formatMoney(e.revenue)}</td>
               <td className="px-4 py-3 text-right tabular-nums">
                 {e.ratings === 0 ? <span className="text-slate-400">—</span>
-                  : <>⭐ {e.averageRating.toFixed(1)} <span className="text-slate-500">({e.ratings})</span></>}
+                  : <>⭐ {e.averageRating.toFixed(1)} <span className="text-slate-500 dark:text-slate-400">({e.ratings})</span></>}
               </td>
             </tr>
           ))}
@@ -154,7 +154,7 @@ export default function AnalyticsDashboard({ load, deps = [], filters = null }) 
     <div className="space-y-6">
       {/* all filters in one row above the charts */}
       <div className="flex flex-wrap items-center gap-2">
-        <span className="text-sm text-slate-500">Last</span>
+        <span className="text-sm text-slate-500 dark:text-slate-400">Last</span>
         {RANGES.map((n) => (
           <button key={n} type="button" onClick={() => setDays(n)} aria-pressed={days === n}
             className={'rounded-full px-3 py-1.5 text-sm font-medium transition-colors ' + (days === n
@@ -198,7 +198,7 @@ export default function AnalyticsDashboard({ load, deps = [], filters = null }) 
             <EventTable events={data.events} />
           </section>
 
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-slate-500 dark:text-slate-400">
             Counted at {clockFormat.format(new Date(data.generatedAt))}. The server keeps these numbers for 1 minute
             (cache), so a new booking can take up to a minute to show here.
           </p>

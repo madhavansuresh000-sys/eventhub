@@ -11,7 +11,7 @@ export default function AdminAnalyticsPage() {
   const { data: clubs } = useAsync(fetchClubs, [])
 
   const clubFilter = (
-    <label className="ml-auto flex items-center gap-2 text-sm text-slate-500">
+    <label className="ml-auto flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
       Club
       <select value={clubId} onChange={(e) => setClubId(e.target.value)}
         className="rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100">

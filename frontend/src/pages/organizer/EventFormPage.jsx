@@ -44,7 +44,7 @@ function TagPicker({ value, onChange, error }) {
   return (
     <fieldset>
       <legend className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
-        Tags <span className="font-normal text-slate-500">({value.length}/{MAX_TAGS}, helps students find it)</span>
+        Tags <span className="font-normal text-slate-500 dark:text-slate-400">({value.length}/{MAX_TAGS}, helps students find it)</span>
       </legend>
       <div className="flex flex-wrap gap-2">
         {(tags ?? []).map((t) => {

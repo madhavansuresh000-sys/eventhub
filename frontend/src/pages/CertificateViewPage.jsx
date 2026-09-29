@@ -47,14 +47,14 @@ export default function CertificateViewPage() {
           <div className="text-left">
             <div className="h-px w-48 bg-slate-400" />
             <p className="mt-2 text-sm font-semibold">Club Coordinator</p>
-            <p className="text-xs text-slate-500">{c.clubName}</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">{c.clubName}</p>
           </div>
           <div className="flex items-center gap-3 text-left">
             <QRCodeSVG value={verifyPageUrl(c.number)} size={72} level="M" title="Scan to verify this certificate" />
             <div>
-              <p className="text-xs text-slate-500">Certificate number</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Certificate number</p>
               <p className="font-mono text-sm font-semibold">{c.number}</p>
-              <p className="text-xs text-slate-500">Scan to verify</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Scan to verify</p>
             </div>
           </div>
         </div>

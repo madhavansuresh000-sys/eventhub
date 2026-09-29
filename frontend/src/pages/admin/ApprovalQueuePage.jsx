@@ -45,16 +45,16 @@ function QueueCard({ event, onApprove, onSendBack }) {
               <h2 className="text-lg font-bold text-slate-900 dark:text-white">{event.title}</h2>
               <StartsIn iso={event.startTime} />
             </div>
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-slate-500 dark:text-slate-400">
               {event.club.name}
             </p>
             <p className="mt-2 text-sm text-slate-700 dark:text-slate-300">{event.description}</p>
 
             <dl className="mt-3 grid gap-x-6 gap-y-1 text-sm sm:grid-cols-2">
-              <div><dt className="inline text-slate-500">When: </dt><dd className="inline text-slate-800 dark:text-slate-200">{formatShortDate(event.startTime)}</dd></div>
-              <div><dt className="inline text-slate-500">Time: </dt><dd className="inline text-slate-800 dark:text-slate-200">{formatTimeRange(event.startTime, event.endTime)}</dd></div>
-              <div><dt className="inline text-slate-500">Where: </dt><dd className="inline text-slate-800 dark:text-slate-200">{event.venue}</dd></div>
-              <div><dt className="inline text-slate-500">Seats × price: </dt><dd className="inline text-slate-800 dark:text-slate-200">{event.totalSeats} × {formatPrice(event.price)}</dd></div>
+              <div><dt className="inline text-slate-500 dark:text-slate-400">When: </dt><dd className="inline text-slate-800 dark:text-slate-200">{formatShortDate(event.startTime)}</dd></div>
+              <div><dt className="inline text-slate-500 dark:text-slate-400">Time: </dt><dd className="inline text-slate-800 dark:text-slate-200">{formatTimeRange(event.startTime, event.endTime)}</dd></div>
+              <div><dt className="inline text-slate-500 dark:text-slate-400">Where: </dt><dd className="inline text-slate-800 dark:text-slate-200">{event.venue}</dd></div>
+              <div><dt className="inline text-slate-500 dark:text-slate-400">Seats × price: </dt><dd className="inline text-slate-800 dark:text-slate-200">{event.totalSeats} × {formatPrice(event.price)}</dd></div>
             </dl>
 
             <div className="mt-3 flex flex-wrap gap-1">
@@ -110,7 +110,7 @@ function SendBackModal({ event, onClose, onConfirm, busy }) {
         hint={`${reason.length}/${REASON_MAX}`}
         autoFocus
       />
-      <p className="mt-3 text-xs font-semibold text-slate-500">Quick reasons</p>
+      <p className="mt-3 text-xs font-semibold text-slate-500 dark:text-slate-400">Quick reasons</p>
       <div className="mt-1 flex flex-wrap gap-2">
         {quickReasons.map((r) => (
           <button
@@ -184,7 +184,7 @@ export default function ApprovalQueuePage() {
         </div>
       )}
 
-      <p className="text-xs text-slate-500">
+      <p className="text-xs text-slate-500 dark:text-slate-400">
         Live data from the backend (POST /api/events/{'{id}'}/approve and /reject). Admins only (the server checks every call).
       </p>
 

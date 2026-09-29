@@ -36,10 +36,10 @@ export default function CertificatesPage() {
             <Card key={c.number} className="overflow-hidden">
               <div className={`h-2 bg-gradient-to-r ${gradientFor(c.clubSlug)}`} />
               <div className="p-5">
-                <p className="text-xs font-semibold tracking-wide text-slate-500 uppercase">Certificate of participation</p>
+                <p className="text-xs font-semibold tracking-wide text-slate-500 dark:text-slate-400 uppercase">Certificate of participation</p>
                 <h2 className="mt-1 text-lg font-bold text-slate-900 dark:text-white">{c.eventTitle}</h2>
                 <p className="text-sm text-slate-600 dark:text-slate-400">{c.clubName} · {formatLongDate(c.eventStart)}</p>
-                <p className="mt-2 font-mono text-xs text-slate-500">{c.number}</p>
+                <p className="mt-2 font-mono text-xs text-slate-500 dark:text-slate-400">{c.number}</p>
                 <div className="mt-4 flex flex-wrap gap-2">
                   <Button to={`/certificates/${c.number}`} size="sm">View</Button>
                   <a href={certificatePdfUrl(c.number)} download

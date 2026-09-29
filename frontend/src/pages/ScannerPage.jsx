@@ -30,7 +30,7 @@ function LiveCounter({ stats, totalSeats }) {
       <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
         <div className="h-full rounded-full bg-green-600 transition-all" style={{ width: `${percent}%` }} />
       </div>
-      <p className="mt-1 text-xs text-slate-500">{totalSeats} seats in the hall</p>
+      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{totalSeats} seats in the hall</p>
     </div>
   )
 }
@@ -93,7 +93,7 @@ function GateDesk({ events }) {
             className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100">
             {events.map((e) => <option key={e.id} value={e.id}>{e.title} · {formatShortDate(e.startTime)}</option>)}
           </select>
-          <p className="mt-1 text-sm text-slate-500">{event.venue} · {event.clubName}</p>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{event.venue} · {event.clubName}</p>
         </div>
         <LiveCounter stats={stats} totalSeats={event.totalSeats} />
       </Card>
@@ -130,7 +130,7 @@ function GateDesk({ events }) {
                   <span className={`grid h-5 w-5 shrink-0 place-items-center rounded-full text-xs font-bold text-white ${look[r.result].color}`}>{look[r.result].mark}</span>
                   <span className="truncate font-mono text-slate-700 dark:text-slate-300">{r.code}</span>
                 </span>
-                <span className="shrink-0 text-slate-500">{r.holder ?? look[r.result].word} · {formatTime(r.at)}</span>
+                <span className="shrink-0 text-slate-500 dark:text-slate-400">{r.holder ?? look[r.result].word} · {formatTime(r.at)}</span>
               </li>
             ))}
           </ul>

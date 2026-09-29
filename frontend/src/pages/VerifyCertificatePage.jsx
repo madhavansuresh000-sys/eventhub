@@ -24,7 +24,7 @@ function Result({ number }) {
     )
   }
   return (
-    <div role="status" className="rounded-2xl bg-green-600 p-6 text-white">
+    <div role="status" className="rounded-2xl bg-green-700 p-6 text-white">
       <p className="text-center text-5xl leading-none font-black" aria-hidden="true">✓</p>
       <p className="mt-2 text-center text-2xl font-extrabold">Genuine EventHub certificate</p>
       <dl className="mx-auto mt-5 grid max-w-md grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">

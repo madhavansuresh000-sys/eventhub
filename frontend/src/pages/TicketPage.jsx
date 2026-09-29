@@ -52,7 +52,7 @@ export default function TicketPage() {
           <div className="space-y-4">
             <p className="flex items-start gap-3 text-slate-700 dark:text-slate-300">
               <CalendarIcon className="mt-0.5 h-5 w-5 shrink-0 text-brand-600 dark:text-brand-400" />
-              <span>{formatLongDate(ticket.startTime)}<br /><span className="text-sm text-slate-500">{formatTime(ticket.startTime)}</span></span>
+              <span>{formatLongDate(ticket.startTime)}<br /><span className="text-sm text-slate-500 dark:text-slate-400">{formatTime(ticket.startTime)}</span></span>
             </p>
             <p className="flex items-center gap-3 text-slate-700 dark:text-slate-300">
               <MapPinIcon className="h-5 w-5 shrink-0 text-brand-600 dark:text-brand-400" /> {ticket.venue}
@@ -62,8 +62,8 @@ export default function TicketPage() {
               Admits <strong>{ticket.quantity}</strong> · {formatPrice(ticket.amount)}
             </p>
             <dl className="grid grid-cols-2 gap-3 border-t border-dashed border-slate-300 pt-4 text-sm dark:border-slate-700">
-              <div><dt className="text-slate-500">Name</dt><dd className="font-medium text-slate-900 dark:text-white">{student.name}</dd></div>
-              <div><dt className="text-slate-500">Status</dt><dd><TicketStatusBadge status={ticket.status} /></dd></div>
+              <div><dt className="text-slate-500 dark:text-slate-400">Name</dt><dd className="font-medium text-slate-900 dark:text-white">{student.name}</dd></div>
+              <div><dt className="text-slate-500 dark:text-slate-400">Status</dt><dd><TicketStatusBadge status={ticket.status} /></dd></div>
             </dl>
           </div>
 

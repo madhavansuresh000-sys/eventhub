@@ -5,7 +5,7 @@ const base =
   'disabled:cursor-not-allowed disabled:opacity-50'
 
 const variants = {
-  primary: 'bg-brand-600 text-white hover:bg-brand-700 dark:bg-brand-500 dark:hover:bg-brand-400',
+  primary: 'bg-brand-600 text-white hover:bg-brand-700 dark:hover:bg-brand-500', // brand-600 in dark too: white text needs 4.5:1
   secondary:
     'border border-brand-600 text-brand-700 hover:bg-brand-50 ' +
     'dark:border-brand-400 dark:text-brand-300 dark:hover:bg-slate-800',

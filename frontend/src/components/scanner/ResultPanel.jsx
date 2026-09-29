@@ -1,6 +1,6 @@
 /** Big, clear colours for a busy gate: green = let in, red = stop. */
 const look = {
-  VALID: { color: 'bg-green-600', mark: '✓', word: 'Let in' },
+  VALID: { color: 'bg-green-700', mark: '✓', word: 'Let in' },
   ALREADY_USED: { color: 'bg-red-600', mark: '✗', word: 'Already used' },
   INVALID: { color: 'bg-red-600', mark: '✗', word: 'Stop' },
 }
@@ -9,7 +9,7 @@ const look = {
 export default function ResultPanel({ result }) {
   if (!result) {
     return (
-      <div className="grid min-h-40 place-items-center rounded-2xl border-2 border-dashed border-slate-300 p-6 text-center text-slate-500 dark:border-slate-700">
+      <div className="grid min-h-40 place-items-center rounded-2xl border-2 border-dashed border-slate-300 p-6 text-center text-slate-500 dark:text-slate-400 dark:border-slate-700">
         Scan a ticket or type its code.
       </div>
     )

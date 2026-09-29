@@ -43,7 +43,7 @@ function StrengthMeter({ password }) {
           <span key={i} className={`h-1.5 flex-1 rounded-full ${i < score ? strength[score].color : 'bg-slate-200 dark:bg-slate-700'}`} />
         ))}
       </div>
-      <p className="mt-1 text-xs text-slate-500">Strength: {strength[score].label}</p>
+      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Strength: {strength[score].label}</p>
     </div>
   )
 }

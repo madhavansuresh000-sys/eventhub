@@ -28,7 +28,7 @@ function ClubTable({ rows }) {
   return (
     <Card className="overflow-x-auto">
       <table className="w-full min-w-[560px] text-left text-sm">
-        <thead className="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-500 dark:border-slate-800">
+        <thead className="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400 dark:border-slate-800">
           <tr>
             <th scope="col" className="px-4 py-3 font-semibold">Club</th>
             <th scope="col" className="px-4 py-3 text-right font-semibold">Published</th>
@@ -120,12 +120,12 @@ export default function AdminOverviewPage() {
           </div>
           <Card className="divide-y divide-slate-100 dark:divide-slate-800">
             {queue.length === 0 ? (
-              <p className="p-4 text-sm text-slate-500">Nothing is waiting. 🎉</p>
+              <p className="p-4 text-sm text-slate-500 dark:text-slate-400">Nothing is waiting. 🎉</p>
             ) : (
               queue.slice(0, 3).map((e) => (
                 <div key={e.id} className="p-4">
                   <p className="font-semibold text-slate-900 dark:text-white">{e.title}</p>
-                  <p className="text-sm text-slate-500">{e.club.name} · {formatShortDate(e.startTime)}</p>
+                  <p className="text-sm text-slate-500 dark:text-slate-400">{e.club.name} · {formatShortDate(e.startTime)}</p>
                 </div>
               ))
             )}
@@ -136,7 +136,7 @@ export default function AdminOverviewPage() {
           <h2 className="mb-3 text-xl font-bold text-slate-900 dark:text-white">Activity log</h2>
           <Card className="divide-y divide-slate-100 dark:divide-slate-800">
             {audit.length === 0 ? (
-              <p className="p-4 text-sm text-slate-500">Every create, edit, submit, approve and send-back appears here.</p>
+              <p className="p-4 text-sm text-slate-500 dark:text-slate-400">Every create, edit, submit, approve and send-back appears here.</p>
             ) : (
               audit.map((a) => (
                 <div key={a.id} className="p-4">
@@ -144,7 +144,7 @@ export default function AdminOverviewPage() {
                     <Badge color={actions[a.action]?.color}>{actions[a.action]?.text ?? a.action}</Badge>
                     <p className="font-semibold text-slate-900 dark:text-white">{a.eventTitle}</p>
                   </div>
-                  <p className="mt-1 text-sm text-slate-500">
+                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
                     by {a.userName ?? 'system'} · {whenFormat.format(new Date(a.createdAt))}
                   </p>
                   {a.details && <p className="mt-1 text-sm italic text-slate-600 dark:text-slate-400">"{a.details}"</p>}
@@ -155,7 +155,7 @@ export default function AdminOverviewPage() {
         </section>
       </div>
 
-      <p className="text-xs text-slate-500">
+      <p className="text-xs text-slate-500 dark:text-slate-400">
         Live data from GET /api/admin/stats/clubs. Tickets sold = booked seats of published events (real bookings arrive in Phase 6). Activity from GET /api/admin/audit. Admins only.
       </p>
     </div>

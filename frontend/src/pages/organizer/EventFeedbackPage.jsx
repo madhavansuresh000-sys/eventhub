@@ -58,14 +58,14 @@ export default function EventFeedbackPage() {
           <Card className="p-5">
             <h2 className="mb-3 font-semibold text-slate-900 dark:text-white">Comments ({f.comments.length})</h2>
             {f.comments.length === 0 ? (
-              <p className="text-sm text-slate-500">Students gave stars but no comments.</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400">Students gave stars but no comments.</p>
             ) : (
               <ul className="divide-y divide-slate-200 dark:divide-slate-800">
                 {f.comments.map((c, i) => (
                   <li key={i} className="py-3">
                     <div className="flex items-center justify-between gap-2">
                       <Stars value={c.rating} className="text-sm" />
-                      <span className="text-xs text-slate-500">{formatShortDate(c.createdAt)}</span>
+                      <span className="text-xs text-slate-500 dark:text-slate-400">{formatShortDate(c.createdAt)}</span>
                     </div>
                     <p className="mt-1 text-slate-700 dark:text-slate-300">“{c.comment}”</p>
                   </li>

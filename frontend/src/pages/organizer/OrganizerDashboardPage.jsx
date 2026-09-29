@@ -32,7 +32,7 @@ function EventRow({ event, onSubmit }) {
               <div className="h-1.5 w-40 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
                 <div className="h-full rounded-full bg-brand-600 dark:bg-brand-400" style={{ width: `${percent}%` }} />
               </div>
-              <span className="text-xs text-slate-500">{booked}/{event.totalSeats} sold</span>
+              <span className="text-xs text-slate-500 dark:text-slate-400">{booked}/{event.totalSeats} sold</span>
             </div>
           )}
         </div>
@@ -104,7 +104,7 @@ export default function OrganizerDashboardPage() {
         )}
       </section>
 
-      <p className="text-xs text-slate-500">
+      <p className="text-xs text-slate-500 dark:text-slate-400">
         Live data from the backend. Only this club's organizers can see it (the server checks every call).{' '}
         <Link to="/admin/approvals" className="underline">Admin approval queue</Link>
       </p>

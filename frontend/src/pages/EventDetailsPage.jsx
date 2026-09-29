@@ -70,7 +70,7 @@ function BookingBox({ event }) {
     <Card className="space-y-5 p-6 lg:sticky lg:top-24">
       <div className="flex items-baseline justify-between">
         <span className="text-3xl font-extrabold text-slate-900 dark:text-white">{formatPrice(event.price)}</span>
-        {Number(event.price) > 0 && <span className="text-sm text-slate-500">per ticket</span>}
+        {Number(event.price) > 0 && <span className="text-sm text-slate-500 dark:text-slate-400">per ticket</span>}
       </div>
 
       <SeatsBar available={event.availableSeats} total={event.totalSeats} />
@@ -99,7 +99,7 @@ function BookingBox({ event }) {
           <Button size="lg" className="w-full" onClick={book} disabled={busy}>
             {busy ? 'Holding your seats…' : free ? 'Book free seats' : 'Book now'}
           </Button>
-          <p className="text-center text-xs text-slate-500">
+          <p className="text-center text-xs text-slate-500 dark:text-slate-400">
             {!user ? 'You will be asked to log in first.'
               : free ? 'Free event: your ticket is ready at once.'
               : 'Your seats are held for 10 minutes while you pay.'}

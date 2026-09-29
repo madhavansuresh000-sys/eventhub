@@ -46,7 +46,7 @@ export default function TestPaymentPage() {
         </div>
         <div className="space-y-5 p-6">
           <div>
-            <p className="text-sm text-slate-500">Paying for</p>
+            <p className="text-sm text-slate-500 dark:text-slate-400">Paying for</p>
             <p className="text-lg font-bold text-slate-900 dark:text-white">{payment.eventTitle}</p>
             <p className="text-sm text-slate-600 dark:text-slate-400">{payment.quantity} ticket{payment.quantity > 1 ? 's' : ''}</p>
           </div>

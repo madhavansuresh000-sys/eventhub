@@ -94,7 +94,7 @@ export default function VolunteersPage() {
           {/* relative: keeps the hidden "Actions" label inside this scroll box (it widened the page on phones) */}
           <div className="relative overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500 dark:bg-slate-800/60">
+              <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400 dark:bg-slate-800/60">
                 <tr>
                   <th scope="col" className="px-4 py-3">Name</th>
                   <th scope="col" className="px-4 py-3">Department</th>
@@ -107,7 +107,7 @@ export default function VolunteersPage() {
                   <tr key={v.id}>
                     <td className="px-4 py-3">
                       <p className="font-medium text-slate-900 dark:text-white">{v.name}</p>
-                      <p className="text-xs text-slate-500">{v.email}</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">{v.email}</p>
                     </td>
                     <td className="px-4 py-3 text-slate-700 dark:text-slate-300">{v.department}</td>
                     <td className="px-4 py-3 text-slate-700 dark:text-slate-300">{titleOf(v.eventId)}</td>

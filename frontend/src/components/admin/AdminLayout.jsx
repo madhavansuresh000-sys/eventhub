@@ -17,7 +17,7 @@ function Sidebar() {
       <div className="mb-4 overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
         <div className="h-2 bg-gradient-to-r from-slate-700 to-slate-900 dark:from-slate-500 dark:to-slate-700" />
         <div className="p-4">
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Admin</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Admin</p>
           <p className="font-bold text-slate-900 dark:text-white">Student Affairs Office</p>
         </div>
       </div>

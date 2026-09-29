@@ -71,6 +71,6 @@ export function SelectField({ label, error, id, options, placeholder, className 
 
 function FieldMessage({ id, error, hint }) {
   if (error) return <p id={`${id}-error`} className="mt-1 text-sm text-red-600 dark:text-red-400">{error}</p>
-  if (hint) return <p id={`${id}-hint`} className="mt-1 text-xs text-slate-500">{hint}</p>
+  if (hint) return <p id={`${id}-hint`} className="mt-1 text-xs text-slate-500 dark:text-slate-400">{hint}</p>
   return null
 }

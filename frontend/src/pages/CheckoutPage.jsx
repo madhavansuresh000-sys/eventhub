@@ -97,11 +97,11 @@ function Checkout({ booking }) {
         <Card className="p-6">
           <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Your details</h2>
           <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
-            <div><dt className="text-slate-500">Name</dt><dd className="font-medium text-slate-900 dark:text-white">{student.name}</dd></div>
-            <div><dt className="text-slate-500">Email</dt><dd className="font-medium text-slate-900 dark:text-white">{student.email}</dd></div>
-            {student.course && <div><dt className="text-slate-500">Course</dt><dd className="font-medium text-slate-900 dark:text-white">{student.course}</dd></div>}
+            <div><dt className="text-slate-500 dark:text-slate-400">Name</dt><dd className="font-medium text-slate-900 dark:text-white">{student.name}</dd></div>
+            <div><dt className="text-slate-500 dark:text-slate-400">Email</dt><dd className="font-medium text-slate-900 dark:text-white">{student.email}</dd></div>
+            {student.course && <div><dt className="text-slate-500 dark:text-slate-400">Course</dt><dd className="font-medium text-slate-900 dark:text-white">{student.course}</dd></div>}
           </dl>
-          <p className="mt-3 text-xs text-slate-500">Your tickets are sent to this email.</p>
+          <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">Your tickets are sent to this email.</p>
         </Card>
 
         <Notice>
@@ -138,7 +138,7 @@ function Checkout({ booking }) {
               {busy === 'pay' ? 'Opening the payment page…' : `Pay ${formatPrice(booking.amount)}`}
             </Button>
             <button type="button" onClick={release} disabled={Boolean(busy)}
-              className="block w-full py-1 text-center text-sm text-slate-500 hover:underline disabled:opacity-50">
+              className="block w-full py-1 text-center text-sm text-slate-500 dark:text-slate-400 hover:underline disabled:opacity-50">
               {busy === 'release' ? 'Releasing…' : 'Release my seats'}
             </button>
           </div>
@@ -176,7 +176,7 @@ export default function CheckoutPage() {
     <div>
       <h1 className="mb-6 text-3xl font-bold text-slate-900 dark:text-white">Checkout</h1>
       <Checkout booking={booking} />
-      <p className="mt-6 text-xs text-slate-500">
+      <p className="mt-6 text-xs text-slate-500 dark:text-slate-400">
         <Link to="/my-tickets" className="underline">My tickets</Link> shows this booking as "waiting for payment" until you pay.
       </p>
     </div>

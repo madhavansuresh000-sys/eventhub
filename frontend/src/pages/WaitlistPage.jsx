@@ -117,7 +117,7 @@ function WaitingCard({ entry, onLeave }) {
         <p className="text-sm text-slate-600 dark:text-slate-400">{formatShortDate(entry.event.startTime)} · {entry.event.venue}</p>
         <div className="mt-2 flex flex-wrap items-center gap-2">
           <Badge color="amber">WAITLIST #{entry.position}</Badge>
-          <span className="text-xs text-slate-500">
+          <span className="text-xs text-slate-500 dark:text-slate-400">
             {entry.quantity} seat{entry.quantity > 1 ? 's' : ''} ·{' '}
             {ahead === 0 ? 'You are next in line!' : `${ahead} student${ahead > 1 ? 's' : ''} ahead of you`}
           </span>
@@ -215,7 +215,7 @@ export default function WaitlistPage() {
             {history.map((w) => (
               <li key={w.id} className="flex flex-wrap justify-between gap-2 py-2">
                 <span className="text-slate-800 dark:text-slate-200">{w.event.title}</span>
-                <span className="text-slate-500">
+                <span className="text-slate-500 dark:text-slate-400">
                   {historyText[w.status]}
                   {w.status === 'BOOKED' && w.bookingId && (
                     <> · <Link to={`/tickets/${w.bookingId}`} className="font-semibold text-brand-600 underline dark:text-brand-400">ticket</Link></>

@@ -16,7 +16,7 @@ describe('ResultPanel (what the volunteer sees at the gate)', () => {
     expect(panel).toHaveTextContent('Let in')
     expect(panel).toHaveTextContent('Ravi Kumar')
     expect(panel).toHaveTextContent('EVH-ABC')
-    expect(panel).toHaveClass('bg-green-600')
+    expect(panel).toHaveClass('bg-green-700')
   })
 
   it('ALREADY_USED = red, with when and by whom', () => {
