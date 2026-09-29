@@ -38,6 +38,12 @@ jobs:
           java-version: '25'
           cache: maven
       - run: ./mvnw -B verify
+      # Phase 8: the JaCoCo coverage report, downloadable from the run's page (Artifacts)
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: backend/target/site/jacoco/
 
   frontend:
     name: Frontend (React)

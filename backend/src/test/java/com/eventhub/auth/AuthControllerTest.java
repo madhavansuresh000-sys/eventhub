@@ -129,10 +129,14 @@ class AuthControllerTest {
 		mvc.perform(get("/api/auth/me").cookie(new Cookie(AuthCookies.NAME, "not-a-real-token")))
 			.andExpect(status().isNoContent());
 
-		// a real token with one letter of the signature changed: it no longer matches, so it is ignored
+		// a real token with one letter of the signature changed: it no longer matches, so it is ignored.
+		// Change the FIRST letter of the signature, not the last: the last base64 letter of a 32-byte
+		// signature carries 2 unused padding bits, so e.g. B -> A there can leave the bytes the same
+		// (the old version of this test failed about 1 run in 16 because of that).
 		String real = jwtService.issue(accounts.admin());
-		char last = real.charAt(real.length() - 1);
-		String changed = real.substring(0, real.length() - 1) + (last == 'A' ? 'B' : 'A');
+		int sig = real.lastIndexOf('.') + 1;
+		char first = real.charAt(sig);
+		String changed = real.substring(0, sig) + (first == 'A' ? 'Q' : 'A') + real.substring(sig + 1);
 		mvc.perform(get("/api/auth/me").cookie(new Cookie(AuthCookies.NAME, real)))
 			.andExpect(status().isOk());
 		mvc.perform(get("/api/auth/me").cookie(new Cookie(AuthCookies.NAME, changed)))
