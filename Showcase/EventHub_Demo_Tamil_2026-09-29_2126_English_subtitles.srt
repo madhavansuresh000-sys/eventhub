@@ -1,0 +1,143 @@
+1
+00:00:00,000 --> 00:00:07,416
+Hello! My name is Madhavan. Today I will show you my project, EventHub.
+
+2
+00:00:07,866 --> 00:00:13,290
+EventHub is a website that runs all of a college's events in one place.
+
+3
+00:00:13,740 --> 00:00:18,468
+I built it with React, Spring Boot and MySQL.
+
+4
+00:00:18,918 --> 00:00:24,606
+Today, many colleges run events on WhatsApp groups and Google Forms.
+
+5
+00:00:25,056 --> 00:00:34,272
+This causes problems: two people booking the last seat, shared ticket screenshots and late certificates.
+
+6
+00:00:34,722 --> 00:00:40,362
+EventHub solves each of these problems with a rule on the server.
+
+7
+00:00:40,812 --> 00:00:48,876
+There are five kinds of users: visitor, student, organizer, volunteer and admin.
+
+8
+00:00:49,326 --> 00:00:53,166
+The server checks the user's role on every request.
+
+9
+00:00:53,616 --> 00:00:59,976
+The React app runs in the browser. It talks to the Spring Boot server using JSON.
+
+10
+00:01:00,426 --> 00:01:08,202
+Each request goes through the security filters, the controller, the service and the repository to reach MySQL.
+
+11
+00:01:08,652 --> 00:01:15,396
+This is the home page. A student can search for an event or click a tag.
+
+12
+00:01:15,846 --> 00:01:21,558
+The event page shows the price and how many seats are left, live.
+
+13
+00:01:22,008 --> 00:01:26,208
+Ravi chooses one ticket and presses Book now.
+
+14
+00:01:26,658 --> 00:01:32,322
+While he pays, the seat is kept for him for ten minutes.
+
+15
+00:01:32,772 --> 00:01:42,780
+Even if a hundred people book at the same moment, no extra seats are sold. Optimistic locking guarantees this.
+
+16
+00:01:43,230 --> 00:01:48,270
+In development this is a test payment page. No real money is used.
+
+17
+00:01:48,720 --> 00:01:52,944
+With a Stripe key, Stripe's real checkout page appears instead.
+
+18
+00:01:53,394 --> 00:02:00,306
+After paying, Ravi gets a QR ticket. An email arrives too.
+
+19
+00:02:00,756 --> 00:02:07,548
+The QR code contains only a random ticket code. No private information.
+
+20
+00:02:07,998 --> 00:02:12,606
+On the event day, volunteer Priya scans the ticket at the gate.
+
+21
+00:02:13,056 --> 00:02:16,224
+First scan: a green LET IN.
+
+22
+00:02:16,674 --> 00:02:26,442
+Scanned again, the same ticket shows a red ALREADY USED, with when and by whom.
+
+23
+00:02:26,892 --> 00:02:37,212
+This works with a single SQL UPDATE. Even if twenty gates scan at once, only one entry is allowed.
+
+24
+00:02:37,662 --> 00:02:43,230
+When the event is over, only people who really came get a PDF certificate.
+
+25
+00:02:43,680 --> 00:02:50,688
+Any company can type the certificate number on this page and check that it is genuine.
+
+26
+00:02:51,138 --> 00:02:56,874
+Now organizer Madhavan creates a new event for the Coding Club.
+
+27
+00:02:57,324 --> 00:03:00,276
+Both the browser and the server check every field.
+
+28
+00:03:00,726 --> 00:03:08,958
+Students see the event only after the admin approves it. Every change is recorded in the audit log.
+
+29
+00:03:09,408 --> 00:03:17,400
+Organizers have an analytics dashboard: tickets and money per day, check-in rate and rating.
+
+30
+00:03:17,850 --> 00:03:24,930
+The database does the counting, and the answer is cached for sixty seconds.
+
+31
+00:03:25,380 --> 00:03:32,292
+When Kavya, an organizer of another club, tries to open the admin page, she is refused.
+
+32
+00:03:32,742 --> 00:03:41,454
+Passwords are protected with BCrypt, and the login token is kept in an httpOnly cookie.
+
+33
+00:03:41,904 --> 00:03:50,256
+The project has 146 automated tests. Service code coverage is 91 percent.
+
+34
+00:03:50,706 --> 00:03:55,050
+GitHub Actions runs all the tests on every push.
+
+35
+00:03:55,500 --> 00:04:03,372
+In short, EventHub is a complete, secure and well-tested full stack project.
+
+36
+00:04:03,822 --> 00:04:08,742
+The next step is to deploy it on the internet. Thank you!

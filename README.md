@@ -80,6 +80,8 @@ Everything is in [`Showcase/`](Showcase/):
 | `EventHub_Complete_Project_Guide_*.pdf` / `.docx` | **105-page guide**: setup, architecture, database (every table), backend code explained, all API endpoints, frontend, user guide with screenshots, testing, security, troubleshooting, lessons, 62 viva questions |
 | `EventHub_Presentation_*.pptx` / `.pdf` | 21-slide presentation with speaker notes |
 | `EventHub_Explanation_Notes_and_Viva_*.pdf` | Short notes: how to explain the project in 1 or 5 minutes, key concepts, numbers to remember, viva Q&A |
+| `EventHub_Demo_Tamil_*.mp4` (+ `.srt`) | 4-minute demo video: Tamil narration with English subtitles |
+| `EventHub_Presentation_Script_Tamil_English_*.pdf` | The video's script: every Tamil sentence with its English subtitle |
 | `screenshots/`, `diagrams/` | 28 screenshots of the real app, 5 diagrams |
 
 ## Folder structure
