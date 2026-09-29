@@ -3,14 +3,17 @@ import { useDispatch, useSelector } from 'react-redux'
 import { Link } from 'react-router-dom'
 
 import { cancelBooking, fetchMyBookings, toTicket } from '../api/bookings'
+import { fetchMyFeedback, giveFeedback } from '../api/feedback'
 import EventPoster from '../components/events/EventPoster'
 import TicketStatusBadge from '../components/tickets/TicketStatusBadge'
 import Badge from '../components/ui/Badge'
 import Button from '../components/ui/Button'
 import Card from '../components/ui/Card'
 import EmptyState from '../components/ui/EmptyState'
+import { TextAreaField } from '../components/ui/FormField'
 import { Skeleton } from '../components/ui/Loader'
 import Modal from '../components/ui/Modal'
+import { StarInput, Stars } from '../components/ui/StarRating'
 import useAsync, { describeError } from '../hooks/useAsync'
 import { cartCleared } from '../store/cartSlice'
 import { notify } from '../store/notificationsSlice'
@@ -23,7 +26,7 @@ const filters = [
   { key: 'cancelled', label: 'Cancelled', match: (t) => ['CANCELLED', 'EXPIRED'].includes(t.status) },
 ]
 
-function TicketRow({ ticket, onCancel }) {
+function TicketRow({ ticket, feedback, onCancel, onRate }) {
   const held = ticket.status === 'HELD'
   return (
     <Card className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center">
@@ -33,12 +36,20 @@ function TicketRow({ ticket, onCancel }) {
         <p className="text-sm text-slate-600 dark:text-slate-400">
           {formatShortDate(ticket.startTime)} · {ticket.quantity} ticket{ticket.quantity > 1 ? 's' : ''} · {formatPrice(ticket.amount)}
         </p>
-        <div className="mt-2"><TicketStatusBadge status={ticket.status} /></div>
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          <TicketStatusBadge status={ticket.status} />
+          {feedback?.rating && <Stars value={feedback.rating} className="text-sm" />}
+        </div>
       </div>
       <div className="flex flex-wrap gap-2">
         {held && <Button to={`/checkout/${ticket.id}`} size="sm">Pay now</Button>}
         {['CONFIRMED', 'ATTENDED'].includes(ticket.status) && <Button to={`/tickets/${ticket.id}`} size="sm">Show QR ticket</Button>}
         {ticket.canCancel && <Button variant="secondary" size="sm" onClick={() => onCancel(ticket)}>Cancel</Button>}
+        {feedback && (
+          <Button variant={feedback.rating ? 'ghost' : 'primary'} size="sm" onClick={() => onRate(ticket, feedback)}>
+            {feedback.rating ? 'Edit rating' : '⭐ Rate this event'}
+          </Button>
+        )}
       </div>
     </Card>
   )
@@ -58,6 +69,12 @@ export default function MyTicketsPage() {
   const [active, setActive] = useState('upcoming')
   const [toCancel, setToCancel] = useState(null)
   const [busy, setBusy] = useState(false)
+
+  // events I attended and that are over: they can be rated (Phase 7)
+  const { data: feedbackList } = useAsync(fetchMyFeedback, [reload])
+  const feedbackFor = Object.fromEntries((feedbackList ?? []).map((f) => [f.bookingId, f]))
+  const unrated = (feedbackList ?? []).filter((f) => !f.rating).length
+  const [toRate, setToRate] = useState(null) // { ticket, rating, comment }
 
   const tickets = (data ?? []).map(toTicket)
   const now = new Date()
@@ -81,6 +98,20 @@ export default function MyTicketsPage() {
     }
   }
 
+  const saveRating = async () => {
+    setBusy(true)
+    try {
+      await giveFeedback(toRate.ticket.id, toRate.rating, toRate.comment)
+      dispatch(notify(`Thanks! Your rating for ${toRate.ticket.title} was saved.`, 'success'))
+      setToRate(null)
+      setReload((n) => n + 1)
+    } catch (e) {
+      dispatch(notify(describeError(e).message, 'error'))
+    } finally {
+      setBusy(false)
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
@@ -97,6 +128,13 @@ export default function MyTicketsPage() {
           )}
         </div>
       </div>
+
+      {unrated > 0 && active !== 'past' && (
+        <button type="button" onClick={() => setActive('past')}
+          className="w-full rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-left text-sm text-amber-900 hover:bg-amber-100 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
+          ⭐ How was it? You can rate {unrated} event{unrated > 1 ? 's' : ''} you attended. <strong>Rate now →</strong>
+        </button>
+      )}
 
       <div className="flex flex-wrap gap-2" role="group" aria-label="Show tickets">
         {filters.map((f) => {
@@ -123,9 +161,33 @@ export default function MyTicketsPage() {
           action={<Button to="/events">Browse events</Button>} />
       ) : (
         <div className="space-y-4">
-          {shown.map((t) => <TicketRow key={t.id} ticket={t} onCancel={setToCancel} />)}
+          {shown.map((t) => (
+            <TicketRow key={t.id} ticket={t} feedback={feedbackFor[t.id]} onCancel={setToCancel}
+              onRate={(ticket, f) => setToRate({ ticket, rating: f.rating ?? 0, comment: f.comment ?? '' })} />
+          ))}
         </div>
       )}
+
+      <Modal
+        open={Boolean(toRate)}
+        onClose={() => setToRate(null)}
+        title={toRate ? `How was ${toRate.ticket.title}?` : ''}
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setToRate(null)}>Later</Button>
+            <Button onClick={saveRating} disabled={busy || !toRate?.rating}>{busy ? 'Saving…' : 'Save rating'}</Button>
+          </>
+        }
+      >
+        {toRate && (
+          <div className="space-y-4">
+            <StarInput value={toRate.rating} onChange={(rating) => setToRate((r) => ({ ...r, rating }))} />
+            <TextAreaField id="rate-comment" label="Comment (optional)" rows={3} maxLength={1000}
+              hint="The organizers see your comment without your name."
+              value={toRate.comment} onChange={(e) => setToRate((r) => ({ ...r, comment: e.target.value }))} />
+          </div>
+        )}
+      </Modal>
 
       <Modal
         open={Boolean(toCancel)}

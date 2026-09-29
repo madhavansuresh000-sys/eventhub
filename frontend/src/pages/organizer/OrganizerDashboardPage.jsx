@@ -41,6 +41,9 @@ function EventRow({ event, onSubmit }) {
           {event.status === 'PUBLISHED' && new Date(event.endTime ?? event.startTime) > new Date() && (
             <Button to={`/scanner?event=${event.id}`} size="sm" variant="ghost">Gate / live count</Button>
           )}
+          {event.status === 'PUBLISHED' && new Date(event.endTime ?? event.startTime) <= new Date() && (
+            <Button to={`/organizer/events/${event.id}/feedback`} size="sm" variant="ghost">⭐ Feedback</Button>
+          )}
           {event.status !== 'PENDING_APPROVAL' && <Button to={`/organizer/events/${event.id}/edit`} size="sm" variant="secondary">Edit</Button>}
           {event.status === 'DRAFT' && <Button size="sm" onClick={() => onSubmit(event)}>Submit for approval</Button>}
         </div>

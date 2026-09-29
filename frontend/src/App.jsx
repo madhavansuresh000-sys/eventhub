@@ -6,6 +6,7 @@ import Layout from './components/layout/Layout'
 import OrganizerLayout from './components/organizer/OrganizerLayout'
 import AdminOverviewPage from './pages/admin/AdminOverviewPage'
 import ApprovalQueuePage from './pages/admin/ApprovalQueuePage'
+import EventFeedbackPage from './pages/organizer/EventFeedbackPage'
 import EventFormPage from './pages/organizer/EventFormPage'
 import OrganizerDashboardPage from './pages/organizer/OrganizerDashboardPage'
 import VolunteersPage from './pages/organizer/VolunteersPage'
@@ -57,6 +58,7 @@ export default function App() {
             <Route index element={<OrganizerDashboardPage />} />
             <Route path="events/new" element={<EventFormPage />} />
             <Route path="events/:id/edit" element={<EventFormPage />} />
+            <Route path="events/:id/feedback" element={<EventFeedbackPage />} />
             <Route path="volunteers" element={<VolunteersPage />} />
           </Route>
         </Route>
