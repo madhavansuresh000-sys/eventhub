@@ -22,13 +22,12 @@ import com.eventhub.user.User;
 import com.eventhub.user.UserRepository;
 
 /**
- * DEV ONLY: creates demo accounts so every role can be tried on your laptop.
- * Not a Flyway migration on purpose: migrations also run on the real server, and a demo
- * admin with a known password there would be a security hole.
- * Runs only with the "dev" profile AND when DEMO_PASSWORD is set in .env. Existing accounts are left alone.
+ * Creates demo accounts so every role can be tried (admin, 2 organizers, a volunteer, a student).
+ * Not a Flyway migration on purpose: the password must never be in the code.
+ * Runs only when DEMO_PASSWORD is set: in .env on a laptop, or as a secret environment variable on a
+ * demo server (use a long, private password there). Empty = no demo accounts. Existing accounts are left alone.
  */
 @Component
-@org.springframework.context.annotation.Profile("dev")
 public class DevDataSeeder implements ApplicationRunner {
 
 	private static final Logger log = LoggerFactory.getLogger(DevDataSeeder.class);

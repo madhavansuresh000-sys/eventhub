@@ -1,4 +1,7 @@
 # ---------- Common settings (all profiles) ----------
+server:
+  port: ${PORT:8080}        # hosting platforms (Render) tell the app its port in PORT
+
 spring:
   application:
     name: eventhub
@@ -49,6 +52,7 @@ app:
     offer-time: 30m         # how long freed seats are kept for the next student on the waitlist
     expiry-check: 60s       # how often the job passes unanswered offers to the next student
   mail:
+    enabled: ${MAIL_ENABLED:true}   # false = bell notifications only, no emails
     from: ${MAIL_FROM:EventHub <no-reply@eventhub.test>}
     retry-every: 60s        # emails that failed (mail server down) are tried again, up to 5 times
   reminders:
@@ -100,12 +104,24 @@ spring:
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
   mail:
-    host: ${MAIL_HOST}
+    host: ${MAIL_HOST:localhost}   # only used when MAIL_ENABLED=true
     port: ${MAIL_PORT:587}
-    username: ${MAIL_USERNAME}
-    password: ${MAIL_PASSWORD}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+management:
+  health:
+    mail:
+      enabled: ${MAIL_ENABLED:false}
 app:
   jwt:
     secret: ${JWT_SECRET}   # required: the app refuses to start without it
   cookie:
     secure: true
+  mail:
+    enabled: ${MAIL_ENABLED:false}   # no mail account on the free demo server: bell only
+  payments:
+    # true only on a public DEMO server without Stripe keys: shows the "TEST PAYMENT - no real money" page
+    test-page-allowed: ${PAYMENTS_TEST_PAGE:false}
+  demo:
+    # demo accounts on the server only if this secret is set (long, private password); empty = none
+    password: ${DEMO_PASSWORD:}

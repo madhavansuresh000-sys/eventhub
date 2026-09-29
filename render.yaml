@@ -1,0 +1,39 @@
+# Render "Blueprint" for the EventHub backend (Phase 9).
+# Render dashboard -> New -> Blueprint -> pick this GitHub repo. Values marked "sync: false" are asked for
+# in the dashboard and never stored in GitHub.
+services:
+  - type: web
+    name: eventhub-api
+    runtime: docker
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    plan: free
+    region: singapore
+    healthCheckPath: /api/health
+    autoDeploy: true            # every push to main deploys again
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+      # MySQL from Aiven: jdbc:mysql://HOST:PORT/defaultdb?sslMode=REQUIRED
+      - key: DB_URL
+        sync: false
+      - key: DB_USERNAME
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      # signs the login tokens; Render makes a long random value
+      - key: JWT_SECRET
+        generateValue: true
+      # the Vercel address of the frontend, e.g. https://eventhub-madhavan.vercel.app
+      - key: FRONTEND_URL
+        sync: false
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false
+      # a long private password for the demo accounts (admin, organizers, volunteer, student)
+      - key: DEMO_PASSWORD
+        sync: false
+      # demo server: no Stripe keys -> the "TEST PAYMENT - no real money" page; no mail account -> bell only
+      - key: PAYMENTS_TEST_PAGE
+        value: "true"
+      - key: MAIL_ENABLED
+        value: "false"

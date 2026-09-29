@@ -3,6 +3,7 @@ package com.eventhub.notification;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -34,6 +35,10 @@ public class NotificationService {
 
 	private final ApplicationEventPublisher publisher;
 
+	/** false = bell only, no emails (e.g. a demo server without a mail account). app.mail.enabled / MAIL_ENABLED */
+	@Value("${app.mail.enabled:true}")
+	private boolean mailEnabled;
+
 	@Transactional
 	public Notification create(Long userId, NotificationKind kind, String title, String body, String link, boolean email) {
 		Notification n = new Notification();
@@ -42,9 +47,10 @@ public class NotificationService {
 		n.setTitle(title);
 		n.setBody(body);
 		n.setLink(link);
-		n.setEmailStatus(email ? EmailStatus.PENDING : EmailStatus.NONE);
+		boolean sendEmail = email && mailEnabled;
+		n.setEmailStatus(sendEmail ? EmailStatus.PENDING : EmailStatus.NONE);
 		notifications.save(n);
-		if (email) {
+		if (sendEmail) {
 			publisher.publishEvent(new EmailQueued(n.getId())); // handled only AFTER the commit
 		}
 		return n;
