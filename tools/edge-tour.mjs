@@ -11,7 +11,9 @@ const PORT = 9334
 const APP = 'http://localhost:5173'
 const PROFILE = join(process.env.TEMP, 'eventhub-demo-edge-profile')
 const SHOTS = process.argv[2] ?? 'tour-shots'
-const READ_TIME = 4200 // ms to read each explanation
+// TOUR_CLEAN=1: no yellow explanation boxes and short pauses - clean screenshots for slides and documents
+const CLEAN = process.env.TOUR_CLEAN === '1'
+const READ_TIME = CLEAN ? 600 : 4200 // ms to read each explanation
 
 const env = readFileSync(new URL('../.env', import.meta.url), 'utf8')
 const PASSWORD = env.match(/^DEMO_PASSWORD=(.*)$/m)[1].trim() // demo accounts, this laptop only
@@ -113,14 +115,14 @@ let shot = 0
 async function step(title, text, action) {
   await js(HELPERS)
   title = `${shot + 1} · ${title}` // steps are numbered automatically
-  await js(`__tour.caption(${JSON.stringify(title)}, ${JSON.stringify(text)})`)
+  if (!CLEAN) await js(`__tour.caption(${JSON.stringify(title)}, ${JSON.stringify(text)})`)
   console.log('STEP', shot + 1, '-', title)
   await sleep(READ_TIME)
   if (action) await action()
   await sleep(1200)
   await settle('/')
   await js(HELPERS)
-  await js(`__tour.caption(${JSON.stringify(title)}, ${JSON.stringify(text)})`)
+  if (!CLEAN) await js(`__tour.caption(${JSON.stringify(title)}, ${JSON.stringify(text)})`)
   const { data } = await send('Page.captureScreenshot', { format: 'png' })
   writeFileSync(join(SHOTS, `tour${String(++shot).padStart(2, '0')}.png`), Buffer.from(data, 'base64'))
 }
