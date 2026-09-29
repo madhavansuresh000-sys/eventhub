@@ -1,9 +1,4 @@
-/** Big, clear colours for a busy gate: green = let in, red = stop. */
-const look = {
-  VALID: { color: 'bg-green-700', mark: '✓', word: 'Let in' },
-  ALREADY_USED: { color: 'bg-red-600', mark: '✗', word: 'Already used' },
-  INVALID: { color: 'bg-red-600', mark: '✗', word: 'Stop' },
-}
+import { look } from './scanLook'
 
 /** The answer of one scan: VALID / ALREADY_USED / INVALID (from POST /api/gate/events/{id}/check-in). */
 export default function ResultPanel({ result }) {

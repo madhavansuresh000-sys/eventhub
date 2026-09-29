@@ -37,9 +37,13 @@ for (let i = 0; i < 40 && !target; i++) {
   } catch { /* Edge still starting */ }
 }
 if (!target) throw new Error('Edge did not start with the DevTools port')
+// Edge may replace its first tab while starting (e.g. after a forced close): wait, then take the tab again
+await sleep(3000)
+target = (await (await fetch(`http://127.0.0.1:${PORT}/json`)).json()).find((t) => t.type === 'page' && t.url.startsWith(APP)) ?? target
 
 const ws = new WebSocket(target.webSocketDebuggerUrl)
 await new Promise((r) => ws.addEventListener('open', r))
+ws.addEventListener('close', () => { console.error('Edge closed the DevTools connection (tab closed?)'); process.exit(1) })
 let nextId = 1
 const waiting = new Map()
 ws.addEventListener('message', (m) => {
@@ -108,17 +112,30 @@ window.__tour = {
 let shot = 0
 async function step(title, text, action) {
   await js(HELPERS)
+  title = `${shot + 1} · ${title}` // steps are numbered automatically
   await js(`__tour.caption(${JSON.stringify(title)}, ${JSON.stringify(text)})`)
   console.log('STEP', shot + 1, '-', title)
   await sleep(READ_TIME)
   if (action) await action()
-  await sleep(1600)
+  await sleep(1200)
+  await settle('/')
   await js(HELPERS)
   await js(`__tour.caption(${JSON.stringify(title)}, ${JSON.stringify(text)})`)
   const { data } = await send('Page.captureScreenshot', { format: 'png' })
   writeFileSync(join(SHOTS, `tour${String(++shot).padStart(2, '0')}.png`), Buffer.from(data, 'base64'))
 }
-const go = async (path) => { await send('Page.navigate', { url: APP + path }); await sleep(2000) }
+/** Waits until the page is really ready: loaded, on the expected address, and no loading spinner or skeleton left. */
+async function settle(pathStart) {
+  for (let i = 0; i < 60; i++) {
+    await sleep(250)
+    const ready = await js(`document.readyState === 'complete' && location.pathname.startsWith(${JSON.stringify(pathStart)})
+      && !document.querySelector('.animate-spin, .animate-pulse') && document.querySelector('main')?.innerText.trim().length > 0`)
+      .catch(() => false) // the page may be changing right now
+    if (ready) break
+  }
+  await sleep(700) // let pictures and charts draw
+}
+const go = async (path) => { await send('Page.navigate', { url: APP + path }); await settle(path.split('?')[0]) }
 const logout = () => js(`fetch('/api/auth/logout', { method: 'POST', headers: { 'X-XSRF-TOKEN':
   decodeURIComponent((document.cookie.split('; ').find(c => c.startsWith('XSRF-TOKEN=')) || '=').split('=')[1]) } })`)
 async function login(email) {
@@ -129,7 +146,8 @@ async function login(email) {
   await js(`__tour.type('password', ${JSON.stringify(PASSWORD)})`)
   await sleep(500)
   await js(`__tour.click('Log in')`)
-  await sleep(2200)
+  await sleep(1500)
+  await settle('/')
 }
 const daysAhead = (d, h) => {
   const t = new Date(Date.now() + d * 86400000); t.setHours(h, 0, 0, 0)
@@ -165,7 +183,8 @@ async function pickEventForRavi() {
   const free = (await (await call('/api/events?size=50&sort=date')).json()).content
     .filter((e) => Number(e.price) > 0 && e.availableSeats > 0 && !booked.has(e.id) && new Date(e.startTime) > soon)
   await call('/api/auth/logout', { method: 'POST' })
-  const pick = free.find((e) => e.tags.includes('robotics')) ?? free[0]
+  // Coding Club first: Priya is its volunteer, so later in the tour she can scan this ticket at the gate
+  const pick = free.find((e) => e.clubSlug === 'coding-club') ?? free[0]
   if (!pick) throw new Error('No paid event with free seats that Ravi has not booked yet')
   return pick
 }
@@ -178,20 +197,20 @@ await logout()
 
 // ---- Part 1: visitor ----
 await go('/')
-await step('1 · Welcome to EventHub',
+await step('Welcome to EventHub',
   'A React app (port 5173) talking to a Spring Boot API (port 8080) with a MySQL database in Docker. Every event here comes from MySQL.')
 await go('/events?tag=robotics')
-await step('2 · Search and filters run on the SERVER',
+await step('Search and filters run on the SERVER',
   'Chip "robotics" → React calls GET /api/events?tag=robotics → Spring Data JPA builds the SQL WHERE clause → only matching, PUBLISHED events come back.')
 await go(`/events/${tourEvent.id}`)
-await step(`3 · Event details: ${tourEvent.title}, ${price}, live seat count`,
+await step(`Event details: ${tourEvent.title}, ${price}, live seat count`,
   'The seat bar shows booked vs total seats straight from the events table. A visitor can look, but must log in to book.',
   () => js(`__tour.click('Book now')`))
-await step('4 · Not logged in → sent to Login, and EventHub remembers the event',
+await step('Not logged in → sent to Login, and EventHub remembers the event',
   `RequireAuth + ?next=/events/${tourEvent.id}: after login we come straight back here.`)
 
 // ---- Part 2: student Ravi books and pays ----
-await step('5 · Log in as Ravi (student)',
+await step('Log in as Ravi (student)',
   'The server checks the BCrypt password hash and sends a JWT inside an httpOnly cookie: JavaScript cannot read it, so it cannot be stolen by a script.',
   async () => {
     await js(`__tour.type('email', 'ravi@eventhub.test')`)
@@ -200,35 +219,68 @@ await step('5 · Log in as Ravi (student)',
     await sleep(500)
     await js(`__tour.click('Log in')`)
   })
-await step(`6 · Back on ${tourEvent.title}, logged in. Press Book now`,
+await step(`Back on ${tourEvent.title}, logged in. Press Book now`,
   'POST /api/bookings: the server takes 1 seat using optimistic locking (@Version), so two students can NEVER get the same last seat.',
   () => js(`__tour.click('Book now')`))
-await step('7 · Checkout: the seat is HELD for 10 minutes',
+await step('Checkout: the seat is HELD for 10 minutes',
   'The timer comes from the SERVER (secondsLeft), not the phone clock. If Ravi does not pay, a job running every minute gives the seat back.')
-await step('8 · Press Pay',
+await step('Press Pay',
   'The server opens a payment session: Stripe Checkout when a Stripe key is in .env, otherwise this built-in TEST page (development only).',
   () => js(`__tour.click('Pay ')`))
-await step('9 · Test payment page · no real money. Press Pay',
+await step('Test payment page · no real money. Press Pay',
   'Pay runs EXACTLY the same confirm code as a real Stripe webhook, and it is idempotent: the same message twice never confirms twice.',
   () => js(`__tour.click('Pay ')`))
 await sleep(2500)
-await step('10 · Payment received → booking CONFIRMED on the server',
+await step('Payment received → booking CONFIRMED on the server',
   'The success page asks the server until it says CONFIRMED: the server decides, never the browser.',
   () => js(`__tour.click('Show my ticket')`))
-await step('11 · The QR ticket',
-  'Each booking gets a unique ticket code (EVH-…). In Phase 7 volunteers scan it at the gate: green LET IN, red STOP.')
+await step('The QR ticket',
+  'Each booking gets a unique ticket code (EVH-…) drawn as a QR code by the server (ZXing). Later in this tour a volunteer scans it at the gate.')
 await go('/my-tickets')
-await step('12 · My tickets: all of Ravi\'s bookings from the database',
+await step('My tickets: all of Ravi\'s bookings from the database',
   'Upcoming / Past / Cancelled tabs. A booking waiting for payment shows "Pay now"; a paid one can be cancelled (seats back + refund).')
+
+// ---- Part 2b: after the event - certificates (Phase 7) ----
+const ticketCode = await js(`fetch('/api/bookings/mine').then((r) => r.json())
+  .then((all) => all.find((b) => b.event.id === ${tourEvent.id} && b.status === 'CONFIRMED')?.ticketCode)`)
+await go('/certificates')
+await step('Certificates: only for students who really came',
+  'A certificate is made only when the ticket was scanned at the gate AND the event is over. Ravi attended "Linux Basics (demo)", so he has one.')
+await go('/certificates/EH-2026-BEQR4Y79')
+await step('The certificate (a PDF drawn by the server with OpenPDF)',
+  'A random number (EH-2026-…) so nobody can guess other people’s certificates. Its QR code opens the public verify page.')
+
+// ---- Part 2c: the gate - volunteer Priya scans Ravi's new ticket (Phase 7) ----
+await logout()
+await login('priya@eventhub.test')
+await go(`/scanner?event=${tourEvent.id}`)
+await step('Gate scanner: Priya (volunteer) scans Ravi’s ticket',
+  'One database UPDATE "mark as used only if not used yet": even with 20 gates scanning at once, exactly one says LET IN.',
+  async () => {
+    await js(`__tour.type('ticket-code', ${JSON.stringify(ticketCode)})`)
+    await sleep(400)
+    await js(`__tour.click('Check')`)
+  })
+await step('The same ticket again → ALREADY USED',
+  'A photo of someone else’s QR code does not work twice. The screen says when and by whom it was used. The live counter goes up.',
+  async () => {
+    await js(`__tour.type('ticket-code', ${JSON.stringify(ticketCode)})`)
+    await sleep(400)
+    await js(`__tour.click('Check')`)
+  })
+await logout()
+await go('/verify/EH-2026-BEQR4Y79')
+await step('Public verify page: anyone can check a certificate',
+  'No login needed: a company reading a resume types the number and sees who, which event and when. A fake number says "not found".')
 
 // ---- Part 3: organizer Madhavan creates an event ----
 await logout()
 await login('madhavan@eventhub.test')
 await go('/organizer')
-await step('13 · Madhavan = ORGANIZER of the Coding Club',
+await step('Madhavan = ORGANIZER of the Coding Club',
   'Club roles live in the club_members table and are checked on EVERY request, so the menu now shows "Organizer" and "Scanner".')
 await go('/organizer/events/new')
-await step('14 · Create a new event',
+await step('Create a new event',
   'Every field is checked twice: in the browser (quick help while typing) and again on the server (@Valid + business rules).',
   async () => {
     await js(`__tour.type('title', ${JSON.stringify(newEvent)})`)
@@ -241,33 +293,42 @@ await step('14 · Create a new event',
     await sleep(600)
     await js(`__tour.click('coding')`)
   })
-await step('15 · Save and submit for approval',
+await step('Save and submit for approval',
   'The event is saved as DRAFT, then moves to PENDING_APPROVAL. Students cannot see it yet. The audit log records who did it.',
   () => js(`__tour.click('Save and submit')`))
+await go('/organizer/analytics')
+await step('Organizer analytics: sales, check-ins and ratings',
+  'Tickets and money per day (Recharts), check-in rate and average stars. The server counts with GROUP BY and keeps the answer 60 s (@Cacheable).')
+await go('/organizer/events/36/feedback')
+await step('Feedback: stars and comments, without names',
+  'Only students who came may rate, after the event. Organizers see the average and the comments, but never who wrote them.')
 
 // ---- Part 4: admin approves ----
 await logout()
 await login('admin@eventhub.test')
 await go('/admin/approvals')
-await step('16 · Admin: the approval queue',
+await step('Admin: the approval queue',
   'Only accounts with the ADMIN role may open this page, and the server checks the same rule on every call (/api/admin/**).',
   () => js(`__tour.clickIn(${JSON.stringify(newEvent)}, 'Approve')`))
-await step('17 · Confirm the approval',
+await step('Confirm the approval',
   'PENDING_APPROVAL → PUBLISHED. From this moment students can find and book it.',
   () => js(`__tour.inDialog('Approve')`))
+await go('/admin/analytics')
+await step('Admin analytics: all clubs together',
+  'The same dashboard for the whole college, with a club filter. Only the admin can open it.')
 await go('/admin')
-await step('18 · Admin overview + Activity log',
+await step('Admin overview + Activity log',
   'Totals per club come from one GROUP BY query. The Activity log (audit_log table) shows WHO created, submitted and approved each event.')
 
 // ---- Part 5: security ----
 await logout()
 await login('kavya@eventhub.test')
 await go('/admin')
-await step('19 · Security: Kavya (Cultural Club organizer) tries the admin area',
+await step('Security: Kavya (Cultural Club organizer) tries the admin area',
   'Blocked. Even if she called the API directly, the server answers 403 Forbidden. The page only hides things; the SERVER protects them.')
 await go('/events')
-await step('20 · End of the tour',
-  'Visitor → student booking with payment → organizer → admin approval → security. Phases 0–6 of EventHub, working together. 🎉')
+await step('End of the tour',
+  'Visitor → booking and payment → QR ticket → gate scan → certificate → organizer analytics → admin approval → security. EventHub, working together. 🎉')
 
 console.log('NEW EVENT:', newEvent)
 ws.close()
