@@ -40,7 +40,7 @@ Phase_0 … Phase_9/     Checklist for each phase
 3. **Frontend:** in `frontend/` run `npm install` (first time) and `npm run dev`, then open http://localhost:5173
 4. **Try the API in Postman:** Import → `postman/EventHub.postman_collection.json` → Run collection (25 requests with checks)
 
-Automated tests (`mvnw test`) use a separate database, `eventhub_test`, so your own data never breaks them.
+Automated tests (`mvnw test`) start their own throwaway MySQL with Testcontainers (Docker must be running), so your own data never breaks them. Coverage report: `backend/target/site/jacoco/index.html`.
 
 ## Status
 ![CI](https://github.com/madhavansuresh000-sys/eventhub/actions/workflows/ci.yml/badge.svg)

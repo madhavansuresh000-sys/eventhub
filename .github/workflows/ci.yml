@@ -10,23 +10,7 @@ jobs:
   backend:
     name: Backend (Spring Boot)
     runs-on: ubuntu-latest
-    services:
-      # a throwaway MySQL just for the tests
-      mysql:
-        image: mysql:8.4
-        env:
-          MYSQL_DATABASE: eventhub_test   # tests use the test database
-          MYSQL_USER: eventhub
-          MYSQL_PASSWORD: ci-password
-          MYSQL_ROOT_PASSWORD: ci-root-password
-        ports:
-          - 3306:3306
-        options: >-
-          --health-cmd="mysqladmin ping -h localhost -u root -pci-root-password"
-          --health-interval=10s --health-timeout=5s --health-retries=10
-    env:
-      MYSQL_USER: eventhub
-      MYSQL_PASSWORD: ci-password
+    # no MySQL service needed: the tests start their own MySQL with Testcontainers (Docker is on the runner)
     defaults:
       run:
         working-directory: backend

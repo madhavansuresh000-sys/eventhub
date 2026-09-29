@@ -67,8 +67,8 @@ spring:
     # read MYSQL_USER / MYSQL_PASSWORD from the project's .env file (not on GitHub)
     import: optional:file:../.env[.properties]
   datasource:
-    # tests use their own database (DB_NAME=eventhub_test, set in pom.xml)
-    url: jdbc:mysql://localhost:3306/${DB_NAME:eventhub}
+    # tests do NOT use this: they start their own MySQL (Testcontainers, see MySqlTestDatabase)
+    url: jdbc:mysql://localhost:3306/eventhub
     username: ${MYSQL_USER}
     password: ${MYSQL_PASSWORD}
   jpa:
