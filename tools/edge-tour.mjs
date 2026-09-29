@@ -19,8 +19,12 @@ const PASSWORD = env.match(/^DEMO_PASSWORD=(.*)$/m)[1].trim() // demo accounts, 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 mkdirSync(SHOTS, { recursive: true })
 
+// ask the API first, before Edge opens (keeps the DevTools connection free of long pauses)
+const tourEvent = await pickEventForRavi()
+
 spawn(EDGE, [
   `--remote-debugging-port=${PORT}`, `--user-data-dir=${PROFILE}`, '--no-first-run', '--no-default-browser-check',
+  '--hide-crash-restore-bubble', '--disable-session-crashed-bubble', // no "restore pages?" after a forced close
   '--window-size=1300,950', '--window-position=40,20', `${APP}/`,
 ], { detached: true, stdio: 'ignore' }).unref()
 
@@ -134,6 +138,40 @@ const daysAhead = (d, h) => {
 }
 const newEvent = `Kotlin for Beginners ${new Date().toTimeString().slice(0, 5)}`
 
+/**
+ * Ravi may book each event only once, so every run picks a paid event he has NOT booked yet
+ * (robotics first, then any tag). Asked from Node straight to the API: login, my bookings, event list.
+ */
+async function pickEventForRavi() {
+  const jar = {}
+  const call = async (path, init = {}) => {
+    const res = await fetch(`http://localhost:8080${path}`, {
+      ...init,
+      headers: { 'Content-Type': 'application/json', 'X-XSRF-TOKEN': jar['XSRF-TOKEN'] ?? '',
+        Cookie: Object.entries(jar).map(([k, v]) => `${k}=${v}`).join('; ') },
+    })
+    for (const c of res.headers.getSetCookie()) {
+      const kv = c.split(';')[0]
+      jar[kv.slice(0, kv.indexOf('='))] = kv.slice(kv.indexOf('=') + 1)
+    }
+    return res
+  }
+  await call('/api/auth/me') // gives the XSRF cookie
+  const login = await call('/api/auth/login', { method: 'POST', body: JSON.stringify({ email: 'ravi@eventhub.test', password: PASSWORD }) })
+  if (!login.ok) throw new Error(`Ravi cannot log in (HTTP ${login.status})`)
+  const booked = new Set((await (await call('/api/bookings/mine')).json())
+    .filter((b) => b.status === 'HELD' || b.status === 'CONFIRMED').map((b) => b.event.id))
+  const soon = Date.now() + 86400000
+  const free = (await (await call('/api/events?size=50&sort=date')).json()).content
+    .filter((e) => Number(e.price) > 0 && e.availableSeats > 0 && !booked.has(e.id) && new Date(e.startTime) > soon)
+  await call('/api/auth/logout', { method: 'POST' })
+  const pick = free.find((e) => e.tags.includes('robotics')) ?? free[0]
+  if (!pick) throw new Error('No paid event with free seats that Ravi has not booked yet')
+  return pick
+}
+const price = `₹${Number(tourEvent.price)}`
+console.log("Tour event:", tourEvent.id, tourEvent.title)
+
 // ================= the tour =================
 await sleep(2500)
 await logout()
@@ -145,12 +183,12 @@ await step('1 · Welcome to EventHub',
 await go('/events?tag=robotics')
 await step('2 · Search and filters run on the SERVER',
   'Chip "robotics" → React calls GET /api/events?tag=robotics → Spring Data JPA builds the SQL WHERE clause → only matching, PUBLISHED events come back.')
-await go('/events/15')
-await step('3 · Event details: Robo Race, ₹100, live seat count',
+await go(`/events/${tourEvent.id}`)
+await step(`3 · Event details: ${tourEvent.title}, ${price}, live seat count`,
   'The seat bar shows booked vs total seats straight from the events table. A visitor can look, but must log in to book.',
   () => js(`__tour.click('Book now')`))
 await step('4 · Not logged in → sent to Login, and EventHub remembers the event',
-  'RequireAuth + ?next=/events/15: after login we come straight back here.')
+  `RequireAuth + ?next=/events/${tourEvent.id}: after login we come straight back here.`)
 
 // ---- Part 2: student Ravi books and pays ----
 await step('5 · Log in as Ravi (student)',
@@ -162,7 +200,7 @@ await step('5 · Log in as Ravi (student)',
     await sleep(500)
     await js(`__tour.click('Log in')`)
   })
-await step('6 · Back on Robo Race, logged in. Press Book now',
+await step(`6 · Back on ${tourEvent.title}, logged in. Press Book now`,
   'POST /api/bookings: the server takes 1 seat using optimistic locking (@Version), so two students can NEVER get the same last seat.',
   () => js(`__tour.click('Book now')`))
 await step('7 · Checkout: the seat is HELD for 10 minutes',
