@@ -1,26 +1,48 @@
-import { createSelector, createSlice } from '@reduxjs/toolkit'
+import { createAsyncThunk, createSelector, createSlice } from '@reduxjs/toolkit'
 
-import { sampleWaitlist } from '../data/sampleStudent'
+import { fetchMyWaitlist } from '../api/waitlist'
+import { describeError } from '../hooks/useAsync'
+import { logout, sessionExpired } from './authSlice'
 
 /**
- * The student's waitlist places (sample data until Phase 7). Bookings and tickets come from the
- * API since Phase 6 (api/bookings.js). Redux Toolkit lets us "change" state directly (Immer copies it).
+ * The student's waitlist places, from the API since Phase 7 (api/waitlist.js).
+ * Kept in Redux (not only in the page) because My tickets also shows "seat offer waiting".
+ * Bookings and tickets are loaded by their pages (api/bookings.js).
  */
+
+export const loadWaitlist = createAsyncThunk('student/loadWaitlist', async (_, { rejectWithValue }) => {
+  try {
+    return await fetchMyWaitlist()
+  } catch (e) {
+    return rejectWithValue(describeError(e))
+  }
+})
+
+const initialState = { waitlist: [], loading: false, error: null }
 
 const studentSlice = createSlice({
   name: 'student',
-  initialState: { waitlist: sampleWaitlist },
-  reducers: {
-    waitlistJoined: (state, action) => {
-      if (!state.waitlist.some((w) => w.eventId === action.payload.eventId)) state.waitlist.push(action.payload)
-    },
-    waitlistLeft: (state, action) => {
-      state.waitlist = state.waitlist.filter((w) => w.eventId !== action.payload)
-    },
+  initialState,
+  reducers: {},
+  extraReducers: (builder) => {
+    builder
+      .addCase(loadWaitlist.pending, (state) => {
+        state.loading = true
+        state.error = null
+      })
+      .addCase(loadWaitlist.fulfilled, (state, action) => {
+        state.loading = false
+        state.waitlist = action.payload
+      })
+      .addCase(loadWaitlist.rejected, (state, action) => {
+        state.loading = false
+        state.error = action.payload?.message ?? 'Could not load your waitlist.'
+      })
+      .addCase(logout.fulfilled, () => initialState)
+      .addCase(sessionExpired, () => initialState)
   },
 })
 
-export const { waitlistJoined, waitlistLeft } = studentSlice.actions
 export default studentSlice.reducer
 
 /**
@@ -33,4 +55,9 @@ export const selectStudent = createSelector([(state) => state.auth.user], (user)
   // "CSE, Year 3" - either part may be missing (e.g. the admin account)
   course: [user.department, user.yearOfStudy && `Year ${user.yearOfStudy}`].filter(Boolean).join(', ') || null,
 })
-export const selectWaitlist = (state) => state.student.waitlist
+
+export const selectWaitlistState = (state) => state.student
+
+/** Places still in a queue: WAITING or OFFERED (the others are history). */
+export const selectOpenWaitlist = createSelector([(state) => state.student.waitlist],
+  (waitlist) => waitlist.filter((w) => w.status === 'WAITING' || w.status === 'OFFERED'))

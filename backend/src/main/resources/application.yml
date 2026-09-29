@@ -35,6 +35,9 @@ app:
   booking:
     hold-time: 10m          # how long seats are kept for a student who has not paid yet
     expiry-check: 60s       # how often the job frees expired holds
+  waitlist:
+    offer-time: 30m         # how long freed seats are kept for the next student on the waitlist
+    expiry-check: 60s       # how often the job passes unanswered offers to the next student
   scheduling:
     enabled: true           # the every-minute job (tests switch it off)
   # where the React app runs: Stripe sends the student back here after paying

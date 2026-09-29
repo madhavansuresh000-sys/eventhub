@@ -30,6 +30,7 @@ import com.eventhub.event.dto.EventRequest;
 import com.eventhub.event.dto.EventSummaryResponse;
 import com.eventhub.tag.Tag;
 import com.eventhub.tag.TagRepository;
+import com.eventhub.waitlist.WaitlistOffers;
 
 import lombok.RequiredArgsConstructor;
 
@@ -44,6 +45,8 @@ public class EventService {
 	private final EventRepository events;
 
 	private final ClubRepository clubs;
+
+	private final WaitlistOffers waitlistOffers;
 
 	private final TagRepository tags;
 
@@ -159,6 +162,8 @@ public class EventService {
 		}
 		event.setAvailableSeats(request.totalSeats() - booked);
 		applyRequest(event, request);
+		// more seats on a published event? the waitlist gets them first
+		waitlistOffers.offerFreeSeats(event, LocalDateTime.now());
 
 		audit.record(AuditAction.UPDATE, event, null);
 		return EventMapper.toDetail(event);

@@ -14,11 +14,12 @@ export default function AuthCard({ title, subtitle, children, footer }) {
   )
 }
 
-/** Blue info box (or green with tone="success"). */
+/** Blue info box (green with tone="success", red with tone="error"). */
 export function Notice({ tone = 'info', children }) {
   const tones = {
     info: 'border-brand-200 bg-brand-50 text-brand-800 dark:border-brand-800 dark:bg-slate-900 dark:text-brand-200',
     success: 'border-green-200 bg-green-50 text-green-800 dark:border-green-900 dark:bg-green-950/40 dark:text-green-300',
+    error: 'border-red-200 bg-red-50 text-red-800 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300',
   }
   return <div role="status" className={`rounded-lg border px-4 py-3 text-sm ${tones[tone]}`}>{children}</div>
 }

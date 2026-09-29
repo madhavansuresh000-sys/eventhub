@@ -16,14 +16,14 @@ import com.eventhub.common.BusinessRuleException;
  * after a short random wait so everybody does not retry at the same instant again.
  * Each attempt must be a NEW transaction (TransactionTemplate), so it reads the latest numbers.
  */
-final class Retry {
+public final class Retry {
 
-	static final int MAX_ATTEMPTS = 30;
+	public static final int MAX_ATTEMPTS = 30;
 
 	private Retry() {
 	}
 
-	static <T> T onConflict(Supplier<T> work) {
+	public static <T> T onConflict(Supplier<T> work) {
 		for (int attempt = 1; ; attempt++) {
 			try {
 				return work.get();

@@ -9,16 +9,27 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import com.eventhub.event.dto.ClubStatsResponse;
+
+import jakarta.persistence.LockModeType;
 
 /**
  * Reads and saves events. JpaSpecificationExecutor lets us build search filters
  * (text, tag, club, date) in Step 7.
  */
 public interface EventRepository extends JpaRepository<Event, Long>, JpaSpecificationExecutor<Event> {
+
+	/**
+	 * Reads the event AND raises its version when the transaction ends, even if nothing else changed.
+	 * Joining the waitlist uses it: if seats were freed at the same moment, one of the two
+	 * transactions fails and retries, so nobody waits in a queue while seats sit free.
+	 */
+	@Lock(LockModeType.OPTIMISTIC_FORCE_INCREMENT)
+	Optional<Event> findLockedById(Long id);
 
 	/** Loads the club and tags in the same query (avoids the "N+1 queries" problem). */
 	@EntityGraph(attributePaths = { "club", "tags" })

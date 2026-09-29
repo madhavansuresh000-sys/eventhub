@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { Link } from 'react-router-dom'
 
@@ -14,7 +14,7 @@ import Modal from '../components/ui/Modal'
 import useAsync, { describeError } from '../hooks/useAsync'
 import { cartCleared } from '../store/cartSlice'
 import { notify } from '../store/notificationsSlice'
-import { selectWaitlist } from '../store/studentSlice'
+import { loadWaitlist, selectOpenWaitlist } from '../store/studentSlice'
 import { formatPrice, formatShortDate } from '../utils/format'
 
 const filters = [
@@ -46,9 +46,15 @@ function TicketRow({ ticket, onCancel }) {
 
 export default function MyTicketsPage() {
   const dispatch = useDispatch()
-  const waitlist = useSelector(selectWaitlist) // sample until Phase 7
+  const waitlist = useSelector(selectOpenWaitlist)
+  const offers = waitlist.filter((w) => w.status === 'OFFERED').length
   const [reload, setReload] = useState(0)
   const { data, loading, error } = useAsync(fetchMyBookings, [reload])
+
+  // reload the waitlist too: a cancel here may have freed seats for someone - or offers may be waiting for me
+  useEffect(() => {
+    dispatch(loadWaitlist())
+  }, [dispatch, reload])
   const [active, setActive] = useState('upcoming')
   const [toCancel, setToCancel] = useState(null)
   const [busy, setBusy] = useState(false)
@@ -84,7 +90,9 @@ export default function MyTicketsPage() {
         </div>
         <div className="flex flex-wrap gap-2">
           <Link to="/certificates"><Badge color="brand">My certificates →</Badge></Link>
-          {waitlist.length > 0 && (
+          {offers > 0 ? (
+            <Link to="/waitlist"><Badge color="green">🎉 Seats kept for you - accept now →</Badge></Link>
+          ) : waitlist.length > 0 && (
             <Link to="/waitlist"><Badge color="amber">On {waitlist.length} waitlist{waitlist.length > 1 ? 's' : ''} →</Badge></Link>
           )}
         </div>

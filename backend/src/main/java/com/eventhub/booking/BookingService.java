@@ -30,6 +30,10 @@ import com.eventhub.payment.PaymentRepository;
 import com.eventhub.payment.PaymentStatus;
 import com.eventhub.payment.ProcessedPaymentEventRepository;
 import com.eventhub.user.UserRepository;
+import com.eventhub.waitlist.WaitlistEntry;
+import com.eventhub.waitlist.WaitlistEntryRepository;
+import com.eventhub.waitlist.WaitlistOffers;
+import com.eventhub.waitlist.WaitlistStatus;
 
 /**
  * The booking engine (Phase 6).
@@ -39,6 +43,9 @@ import com.eventhub.user.UserRepository;
  *   markPaid() the payment company says "paid" -> CONFIRMED (only once, however often it says so)
  *   cancel()  seats go back (and money, if paid)
  *   expireOldHolds() the every-minute job: unpaid holds older than 10 minutes -> EXPIRED, seats back
+ *   acceptOffer() a waitlisted student takes the seats kept for them (Phase 7)
+ *
+ * Whenever seats come back (cancel, expiry) they are offered to the waitlist in the SAME transaction.
  *
  * events.available_seats is the ONE counter of free seats. Every change to it goes through
  * optimistic locking (@Version on Event) + Retry, so two students can never get the same last seat.
@@ -70,6 +77,10 @@ public class BookingService {
 
 	private final PaymentGateway gateway;
 
+	private final WaitlistEntryRepository waitlist;
+
+	private final WaitlistOffers offers;
+
 	private final TransactionTemplate tx;
 
 	private final TransactionTemplate readTx;
@@ -78,13 +89,16 @@ public class BookingService {
 
 	public BookingService(BookingRepository bookings, EventRepository events, UserRepository users,
 			PaymentRepository payments, ProcessedPaymentEventRepository processedEvents, PaymentGateway gateway,
-			PlatformTransactionManager txManager, @Value("${app.booking.hold-time}") Duration holdTime) {
+			WaitlistEntryRepository waitlist, WaitlistOffers offers, PlatformTransactionManager txManager,
+			@Value("${app.booking.hold-time}") Duration holdTime) {
 		this.bookings = bookings;
 		this.events = events;
 		this.users = users;
 		this.payments = payments;
 		this.processedEvents = processedEvents;
 		this.gateway = gateway;
+		this.waitlist = waitlist;
+		this.offers = offers;
 		this.tx = new TransactionTemplate(txManager);
 		this.readTx = new TransactionTemplate(txManager);
 		this.readTx.setReadOnly(true);
@@ -115,6 +129,12 @@ public class BookingService {
 		if (bookings.existsByUserIdAndEventIdAndStatusIn(userId, eventId, ACTIVE)) {
 			throw new BusinessRuleException("You already have seats for " + event.getTitle() + ". See My tickets.");
 		}
+		WaitlistEntry myPlace = waitlist
+			.findFirstByUserIdAndEventIdAndStatusIn(userId, eventId, List.of(WaitlistStatus.WAITING, WaitlistStatus.OFFERED))
+			.orElse(null);
+		if (myPlace != null && myPlace.getStatus() == WaitlistStatus.OFFERED) {
+			throw new BusinessRuleException("Seats of " + event.getTitle() + " are kept for you. Accept the offer on the Waitlist page.");
+		}
 		if (event.getAvailableSeats() < quantity) {
 			throw new BusinessRuleException(event.getAvailableSeats() == 0
 					? event.getTitle() + " is sold out. You can join the waitlist."
@@ -128,14 +148,24 @@ public class BookingService {
 		events.saveAndFlush(event);
 
 		// 2) then write the booking
-		boolean free = event.getPrice().signum() == 0;
+		Booking booking = bookings.save(newBooking(userId, event, quantity, now));
+		if (myPlace != null) {
+			// booked directly while waiting: the waitlist place is no longer needed
+			myPlace.setBooking(booking);
+			myPlace.close(WaitlistStatus.BOOKED, now);
+		}
+		return booking.getId();
+	}
+
+	/** Free event -> CONFIRMED; paid event -> HELD for 10 minutes. The seats must already be taken. */
+	private Booking newBooking(Long userId, Event event, int quantity, LocalDateTime now) {
 		Booking booking = new Booking();
 		booking.setUser(users.getReferenceById(userId));
 		booking.setEvent(event);
 		booking.setQuantity(quantity);
 		booking.setAmount(event.getPrice().multiply(BigDecimal.valueOf(quantity)));
 		booking.setTicketCode(newTicketCode());
-		if (free) {
+		if (event.getPrice().signum() == 0) {
 			booking.setStatus(BookingStatus.CONFIRMED);
 			booking.setConfirmedAt(now);
 		}
@@ -143,7 +173,43 @@ public class BookingService {
 			booking.setStatus(BookingStatus.HELD);
 			booking.setHoldExpiresAt(now.plus(holdTime));
 		}
-		return bookings.save(booking).getId();
+		return booking;
+	}
+
+	// =====================================================================================
+	// Waitlist offer -> booking (Phase 7)
+	// =====================================================================================
+
+	/**
+	 * The student accepts a seat offer. The seats were already kept for them when the offer was made,
+	 * so this only turns the offer into a normal booking (paid event: HELD, then pay as usual).
+	 */
+	public BookingResponse acceptOffer(Long userId, Long entryId) {
+		Long id = Retry.onConflict(() -> tx.execute(status -> {
+			LocalDateTime now = LocalDateTime.now();
+			WaitlistEntry entry = waitlist.findWithEventById(entryId)
+				.filter(w -> w.getUser().getId().equals(userId))
+				.orElseThrow(() -> new ResourceNotFoundException("Waitlist entry", entryId));
+			if (entry.getStatus() != WaitlistStatus.OFFERED) {
+				throw new BusinessRuleException("There is no seat offer to accept: this waitlist place is "
+						+ entry.getStatus().name().toLowerCase() + ".");
+			}
+			if (!entry.getOfferExpiresAt().isAfter(now)) {
+				throw new BusinessRuleException("Sorry, the 30 minutes to accept this offer are over.");
+			}
+			Event event = entry.getEvent();
+			if (!event.getStartTime().isAfter(now)) {
+				throw new BusinessRuleException(event.getTitle() + " has already started.");
+			}
+			if (bookings.existsByUserIdAndEventIdAndStatusIn(userId, event.getId(), ACTIVE)) {
+				throw new BusinessRuleException("You already have seats for " + event.getTitle() + ". See My tickets.");
+			}
+			Booking booking = bookings.save(newBooking(userId, event, entry.getQuantity(), now));
+			entry.setBooking(booking);
+			entry.close(WaitlistStatus.BOOKED, now);
+			return booking.getId();
+		}));
+		return get(userId, id);
 	}
 
 	// =====================================================================================
@@ -386,6 +452,7 @@ public class BookingService {
 			p.setRefundedAt(now);
 			toRefund.add(p.getSessionId());
 		}
+		offers.offerFreeSeats(event, now); // the next students in the queue get these seats
 	}
 
 	// =====================================================================================
