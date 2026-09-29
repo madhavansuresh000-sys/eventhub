@@ -10,6 +10,7 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -81,6 +82,8 @@ public class BookingService {
 
 	private final WaitlistOffers offers;
 
+	private final ApplicationEventPublisher publisher;
+
 	private final TransactionTemplate tx;
 
 	private final TransactionTemplate readTx;
@@ -89,7 +92,8 @@ public class BookingService {
 
 	public BookingService(BookingRepository bookings, EventRepository events, UserRepository users,
 			PaymentRepository payments, ProcessedPaymentEventRepository processedEvents, PaymentGateway gateway,
-			WaitlistEntryRepository waitlist, WaitlistOffers offers, PlatformTransactionManager txManager,
+			WaitlistEntryRepository waitlist, WaitlistOffers offers, ApplicationEventPublisher publisher,
+			PlatformTransactionManager txManager,
 			@Value("${app.booking.hold-time}") Duration holdTime) {
 		this.bookings = bookings;
 		this.events = events;
@@ -99,6 +103,7 @@ public class BookingService {
 		this.gateway = gateway;
 		this.waitlist = waitlist;
 		this.offers = offers;
+		this.publisher = publisher;
 		this.tx = new TransactionTemplate(txManager);
 		this.readTx = new TransactionTemplate(txManager);
 		this.readTx.setReadOnly(true);
@@ -148,13 +153,21 @@ public class BookingService {
 		events.saveAndFlush(event);
 
 		// 2) then write the booking
-		Booking booking = bookings.save(newBooking(userId, event, quantity, now));
+		Booking booking = saveNew(userId, event, quantity, now);
 		if (myPlace != null) {
 			// booked directly while waiting: the waitlist place is no longer needed
 			myPlace.setBooking(booking);
 			myPlace.close(WaitlistStatus.BOOKED, now);
 		}
 		return booking.getId();
+	}
+
+	private Booking saveNew(Long userId, Event event, int quantity, LocalDateTime now) {
+		Booking booking = bookings.save(newBooking(userId, event, quantity, now));
+		if (booking.getStatus() == BookingStatus.CONFIRMED) {
+			publisher.publishEvent(new BookingConfirmed(booking.getId())); // "your ticket is ready"
+		}
+		return booking;
 	}
 
 	/** Free event -> CONFIRMED; paid event -> HELD for 10 minutes. The seats must already be taken. */
@@ -204,7 +217,7 @@ public class BookingService {
 			if (bookings.existsByUserIdAndEventIdAndStatusIn(userId, event.getId(), ACTIVE)) {
 				throw new BusinessRuleException("You already have seats for " + event.getTitle() + ". See My tickets.");
 			}
-			Booking booking = bookings.save(newBooking(userId, event, entry.getQuantity(), now));
+			Booking booking = saveNew(userId, event, entry.getQuantity(), now);
 			entry.setBooking(booking);
 			entry.close(WaitlistStatus.BOOKED, now);
 			return booking.getId();
@@ -321,6 +334,7 @@ public class BookingService {
 		booking.setStatus(BookingStatus.CONFIRMED);
 		booking.setConfirmedAt(now);
 		booking.setHoldExpiresAt(null);
+		publisher.publishEvent(new BookingConfirmed(booking.getId()));
 	}
 
 	private PaidResult refundLater(Payment payment, LocalDateTime now, List<String> toRefund) {

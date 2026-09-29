@@ -25,6 +25,11 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
 	@Query("select b.id from Booking b where b.status = com.eventhub.booking.BookingStatus.HELD and b.holdExpiresAt < :now")
 	List<Long> findExpiredHoldIds(@Param("now") LocalDateTime now);
 
+	/** Reminder job: confirmed bookings of events starting in [from, to) that got no reminder yet. */
+	@Query("select b.id from Booking b where b.status = com.eventhub.booking.BookingStatus.CONFIRMED"
+			+ " and b.reminderSentAt is null and b.event.startTime >= :from and b.event.startTime < :to")
+	List<Long> findIdsNeedingReminder(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
+
 	long countByEventIdAndStatusIn(Long eventId, List<BookingStatus> statuses);
 
 }

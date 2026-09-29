@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -51,6 +52,8 @@ public class EventService {
 	private final TagRepository tags;
 
 	private final AuditService audit;
+
+	private final ApplicationEventPublisher publisher;
 
 	/** Sort options the API accepts, mapped to entity fields. */
 	private static final Map<String, String> SORT_FIELDS = Map.of(
@@ -191,6 +194,7 @@ public class EventService {
 		moveTo(event, EventStatus.PUBLISHED, "approve");
 		event.setReviewNote(null);
 		audit.record(AuditAction.APPROVE, event, null);
+		publisher.publishEvent(new EventReviewed(event.getId(), true, null)); // tells the organizers
 		return EventMapper.toDetail(event);
 	}
 
@@ -204,6 +208,7 @@ public class EventService {
 		moveTo(event, EventStatus.DRAFT, "reject");
 		event.setReviewNote(reason.trim());
 		audit.record(AuditAction.REJECT, event, reason.trim());
+		publisher.publishEvent(new EventReviewed(event.getId(), false, reason.trim()));
 		return EventMapper.toDetail(event);
 	}
 

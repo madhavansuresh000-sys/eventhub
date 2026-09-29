@@ -10,6 +10,7 @@ import { notify } from '../../store/notificationsSlice'
 import Button from '../ui/Button'
 import { CloseIcon, MenuIcon, MoonIcon, SunIcon } from '../ui/icons'
 import Logo from './Logo'
+import NotificationBell from './NotificationBell'
 
 /** Everyone sees Home and Events; the other links depend on who is logged in. */
 function linksFor(user) {
@@ -86,7 +87,8 @@ function AccountButtons({ className = '' }) {
 export default function Navbar() {
   const [open, setOpen] = useState(false)
   const location = useLocation()
-  const links = linksFor(useSelector(selectUser))
+  const user = useSelector(selectUser)
+  const links = linksFor(user)
   const [lastPath, setLastPath] = useState(location.pathname)
 
   // close the phone menu after moving to another page
@@ -110,6 +112,7 @@ export default function Navbar() {
 
         <div className="flex items-center gap-2">
           <SeatHoldPill />
+          {user && <NotificationBell />}
           <ThemeToggle />
           {/* wrapper: the button's own inline-flex would override "hidden" */}
           <span className="hidden sm:block">

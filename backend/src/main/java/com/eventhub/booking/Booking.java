@@ -73,6 +73,10 @@ public class Booking {
 	@Column(name = "cancelled_at")
 	private LocalDateTime cancelledAt;
 
+	/** When the day-before reminder was sent (sent once). */
+	@Column(name = "reminder_sent_at")
+	private LocalDateTime reminderSentAt;
+
 	/** Stops the payment webhook and the expiry job from changing the same booking at the same moment. */
 	@Version
 	@Column(nullable = false)
