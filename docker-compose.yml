@@ -1,3 +1,6 @@
+# project name for Docker (containers are grouped as "eventhub")
+name: eventhub
+
 # EventHub local services — start with:  docker compose up -d
 # Passwords come from the .env file (never pushed to GitHub). See .env.example.
 services:
@@ -31,3 +34,5 @@ services:
 
 volumes:
   mysql-data:
+    # fixed name: the data stays even if the project folder is renamed (was created as 02_eventhub_practice_project_...)
+    name: 02_eventhub_practice_project_mysql-data
