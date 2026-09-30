@@ -25,3 +25,5 @@ Each run creates a new "Kotlin for Beginners HH:MM" event. Ravi books a paid eve
 ```
 node tools/edge-tour.mjs tour-shots
 ```
+
+`showcase-src/`: the generators for the guide, presentation and videos in `Showcase/` (see its README).

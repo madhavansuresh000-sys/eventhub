@@ -1,0 +1,40 @@
+<!doctype html><meta charset="utf-8"><style>*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Calibri,Arial,sans-serif;background:#fff;color:#1f2937;padding:28px;width:1400px}
+.row{display:flex;align-items:center;gap:18px}
+.col{display:flex;flex-direction:column;gap:14px}
+.b{border:2px solid #4f46e5;background:#eef2ff;border-radius:12px;padding:14px 18px;text-align:center}
+.b b{display:block;font-size:22px;color:#1e1b4b}
+.b span{font-size:16px;color:#374151}
+.dark{background:#1e1b4b;border-color:#1e1b4b}.dark b,.dark span{color:#fff}
+.amber{background:#fef3c7;border-color:#f59e0b}
+.green{background:#dcfce7;border-color:#15803d}
+.red{background:#fee2e2;border-color:#b91c1c}
+.gray{background:#f3f4f6;border-color:#9ca3af}
+.arrow{font-size:34px;color:#6b7280;line-height:1}
+.lbl{font-size:16px;color:#4b5563;text-align:center}
+.frame{border:3px dashed #1e1b4b;border-radius:16px;padding:18px}
+.frame>h3{font-size:20px;color:#1e1b4b;text-align:center;margin-bottom:12px}
+h2{font-size:26px;color:#1e1b4b;margin-bottom:18px}
+</style><body><h2>EventHub architecture</h2>
+<div class="row" style="align-items:stretch">
+ <div class="col" style="width:280px;justify-content:center">
+  <div class="b"><b>Browser</b><span>React 19 single-page app<br>Redux store · React Router<br>Axios (api/client.js)</span></div>
+  <div class="lbl">JSON over HTTP<br>JWT in httpOnly cookie<br>X-XSRF-TOKEN header</div>
+  <div class="b amber"><b>Vite dev server :5173</b><span>forwards /api to :8080</span></div>
+ </div>
+ <div class="arrow" style="align-self:center">&#10140;</div>
+ <div class="frame" style="width:520px"><h3>Spring Boot API :8080</h3>
+  <div class="col">
+   <div class="b amber"><b>Security filter chain</b><span>JwtCookieFilter · CSRF · CORS · URL rules</span></div><div class="arrow" style="text-align:center">&#8595;</div>
+   <div class="b"><b>Controllers</b><span>@RestController · @Valid · @PreAuthorize</span></div><div class="arrow" style="text-align:center">&#8595;</div>
+   <div class="b"><b>Services</b><span>business rules · @Transactional · events · @Cacheable</span></div><div class="arrow" style="text-align:center">&#8595;</div>
+   <div class="b"><b>Repositories</b><span>Spring Data JPA · Hibernate · JPQL</span></div>
+   <div class="b gray"><b>Scheduled jobs</b><span>hold expiry · waitlist offers · email retry · reminders</span></div>
+  </div></div>
+ <div class="arrow" style="align-self:center">&#10140;</div>
+ <div class="col" style="width:420px;justify-content:center">
+  <div class="b dark"><b>MySQL 8.4 (Docker)</b><span>17 tables · Flyway V1-V9</span></div>
+  <div class="b"><b>Mail server</b><span>Mailpit :1025 / :8025 in development</span></div>
+  <div class="b"><b>Stripe</b><span>Checkout + signed webhook (test mode)</span></div>
+  <div class="b amber"><b>GitHub Actions CI</b><span>backend tests (Testcontainers) + frontend lint / test / build</span></div>
+ </div></div></body>

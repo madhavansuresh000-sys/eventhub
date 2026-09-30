@@ -1,0 +1,44 @@
+<!doctype html><meta charset="utf-8"><style>*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Calibri,Arial,sans-serif;background:#fff;color:#1f2937;padding:28px;width:1400px}
+.row{display:flex;align-items:center;gap:18px}
+.col{display:flex;flex-direction:column;gap:14px}
+.b{border:2px solid #4f46e5;background:#eef2ff;border-radius:12px;padding:14px 18px;text-align:center}
+.b b{display:block;font-size:22px;color:#1e1b4b}
+.b span{font-size:16px;color:#374151}
+.dark{background:#1e1b4b;border-color:#1e1b4b}.dark b,.dark span{color:#fff}
+.amber{background:#fef3c7;border-color:#f59e0b}
+.green{background:#dcfce7;border-color:#15803d}
+.red{background:#fee2e2;border-color:#b91c1c}
+.gray{background:#f3f4f6;border-color:#9ca3af}
+.arrow{font-size:34px;color:#6b7280;line-height:1}
+.lbl{font-size:16px;color:#4b5563;text-align:center}
+.frame{border:3px dashed #1e1b4b;border-radius:16px;padding:18px}
+.frame>h3{font-size:20px;color:#1e1b4b;text-align:center;margin-bottom:12px}
+h2{font-size:26px;color:#1e1b4b;margin-bottom:18px}
+</style><body><h2>Main tables and how they are linked</h2>
+<div class="row" style="align-items:flex-start;gap:22px">
+ <div class="col" style="width:310px">
+  <div class="b"><b>users</b><span>email, password_hash, full_name, enabled</span></div>
+  <div class="b gray"><b>user_roles + roles</b><span>STUDENT, ADMIN</span></div>
+  <div class="b gray"><b>profiles</b><span>department, year (one per user)</span></div>
+  <div class="b"><b>club_members</b><span>user + club + club_role<br>ORGANIZER / VOLUNTEER / MEMBER</span></div>
+  <div class="b"><b>clubs</b><span>name, slug</span></div>
+ </div>
+ <div class="col" style="width:330px">
+  <div class="b dark"><b>events</b><span>club_id, title, start / end, total_seats,<br>available_seats, price, status, version</span></div>
+  <div class="b gray"><b>event_tags + tags</b><span>many-to-many</span></div>
+  <div class="b gray"><b>audit_log</b><span>who did what to which event</span></div>
+  <div class="b amber"><b>waitlist_entries</b><span>user, event, quantity, status,<br>offer_expires_at</span></div>
+ </div>
+ <div class="col" style="width:330px">
+  <div class="b dark"><b>bookings</b><span>user, event, quantity, status, amount,<br>ticket_code, hold_expires_at,<br>checked_in_at / by, version</span></div>
+  <div class="b"><b>payments</b><span>booking, provider, session_id, status</span></div>
+  <div class="b gray"><b>processed_payment_events</b><span>webhook ids already handled</span></div>
+ </div>
+ <div class="col" style="width:300px">
+  <div class="b green"><b>certificates</b><span>booking (unique), number EH-YYYY-...</span></div>
+  <div class="b green"><b>feedback</b><span>booking (unique), rating 1-5, comment</span></div>
+  <div class="b"><b>notifications</b><span>user, kind, text, read, email status</span></div>
+ </div>
+</div>
+<div class="lbl" style="text-align:left;margin-top:18px;font-size:18px">Read it like this: a <b>club</b> has many <b>events</b>; a <b>user</b> has many <b>bookings</b>; each booking belongs to one event, may have <b>payments</b> and - after the gate scan and the end of the event - one <b>certificate</b> and one <b>feedback</b>.</div></body>

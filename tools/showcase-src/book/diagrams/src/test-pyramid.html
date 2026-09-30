@@ -1,0 +1,24 @@
+<!doctype html><meta charset="utf-8"><style>*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Calibri,Arial,sans-serif;background:#fff;color:#1f2937;padding:28px;width:1400px}
+.row{display:flex;align-items:center;gap:18px}
+.col{display:flex;flex-direction:column;gap:14px}
+.b{border:2px solid #4f46e5;background:#eef2ff;border-radius:12px;padding:14px 18px;text-align:center}
+.b b{display:block;font-size:22px;color:#1e1b4b}
+.b span{font-size:16px;color:#374151}
+.dark{background:#1e1b4b;border-color:#1e1b4b}.dark b,.dark span{color:#fff}
+.amber{background:#fef3c7;border-color:#f59e0b}
+.green{background:#dcfce7;border-color:#15803d}
+.red{background:#fee2e2;border-color:#b91c1c}
+.gray{background:#f3f4f6;border-color:#9ca3af}
+.arrow{font-size:34px;color:#6b7280;line-height:1}
+.lbl{font-size:16px;color:#4b5563;text-align:center}
+.frame{border:3px dashed #1e1b4b;border-radius:16px;padding:18px}
+.frame>h3{font-size:20px;color:#1e1b4b;text-align:center;margin-bottom:12px}
+h2{font-size:26px;color:#1e1b4b;margin-bottom:18px}
+</style><body><h2>The testing pyramid used in EventHub</h2>
+<div class="col" style="align-items:center;gap:8px">
+<div class="b amber" style="width:440px"><b>Manual + scripted demo</b><span>28-step Edge tour · Postman collection (43 checks)</span></div>
+<div class="b" style="width:720px"><b>Integration tests (most of the 133 backend tests)</b><span>@SpringBootTest + MockMvc + real MySQL 8.4 from Testcontainers · security, flows, concurrency</span></div>
+<div class="b dark" style="width:980px"><b>Unit tests</b><span>JUnit 5 + Mockito (Stripe gateway, Retry, analytics maths, jobs) · Vitest + React Testing Library (13 tests)</span></div>
+<div class="b gray" style="width:1240px"><b>Every push: GitHub Actions CI</b><span>mvnw verify (tests + JaCoCo coverage) · npm run lint · npm test · npm run build</span></div>
+</div></body>

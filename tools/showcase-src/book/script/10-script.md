@@ -1,0 +1,136 @@
+# 1. Presentation script (Tamil narration with English meaning)
+
+Use this script to present EventHub, or to follow the demo video (EventHub_Demo_Tamil_*.mp4, about 4 minutes, with English subtitles). Each row is one sentence: say the Tamil line; the English column is the subtitle shown in the video. Technical words stay in English, as people naturally say them.
+
+> Tip: speak slowly, pause after each sentence, and point at the screen when you mention a colour, a number or a button.
+
+## Scene 1: Slide 1 - Title
+
+| Tamil (say this) | English (subtitle) |
+|---|---|
+| வணக்கம்! என் பெயர் மாதவன். இன்று என் project EventHub-ஐ உங்களுக்குக் காட்டப் போகிறேன். | Hello! My name is Madhavan. Today I will show you my project, EventHub. |
+| EventHub என்பது ஒரு college-இன் எல்லா events-ஐயும் ஒரே இடத்தில் நடத்தும் ஒரு website. | EventHub is a website that runs all of a college's events in one place. |
+| இதை React, Spring Boot, MySQL பயன்படுத்தி உருவாக்கினேன். | I built it with React, Spring Boot and MySQL. |
+
+## Scene 2: Slide 2 - The problem
+
+| Tamil (say this) | English (subtitle) |
+|---|---|
+| இன்று பல college-களில் events, WhatsApp group-களிலும் Google Form-களிலும் நடத்தப்படுகின்றன. | Today, many colleges run events on WhatsApp groups and Google Forms. |
+| இதனால் கடைசி seat-க்கு இரண்டு பேர் book செய்வது, ticket screenshot பகிர்வது, தாமதமான certificate போன்ற பிரச்சனைகள் வருகின்றன. | This causes problems: two people booking the last seat, shared ticket screenshots and late certificates. |
+| EventHub, இந்த ஒவ்வொரு பிரச்சனைக்கும் server-இல் ஒரு விதியின் மூலம் தீர்வு தருகிறது. | EventHub solves each of these problems with a rule on the server. |
+
+## Scene 3: Slide 4 - Users
+
+| Tamil (say this) | English (subtitle) |
+|---|---|
+| இதில் ஐந்து வகையான பயனர்கள் இருக்கிறார்கள்: visitor, student, organizer, volunteer, admin. | There are five kinds of users: visitor, student, organizer, volunteer and admin. |
+| ஒவ்வொரு request-இலும், பயனரின் role-ஐ server சரிபார்க்கிறது. | The server checks the user's role on every request. |
+
+## Scene 4: Slide 7 - Architecture
+
+| Tamil (say this) | English (subtitle) |
+|---|---|
+| Browser-இல் React app ஓடுகிறது. அது JSON மூலம் Spring Boot server-உடன் பேசுகிறது. | The React app runs in the browser. It talks to the Spring Boot server using JSON. |
+| ஒவ்வொரு request-உம் security filter, controller, service, repository வழியாக MySQL database-ஐ அடைகிறது. | Each request goes through the security filters, the controller, the service and the repository to reach MySQL. |
+
+## Scene 5: Screen - home
+
+| Tamil (say this) | English (subtitle) |
+|---|---|
+| இது home page. Student ஒரு event-ஐ search செய்யலாம், அல்லது ஒரு tag-ஐ click செய்யலாம். | This is the home page. A student can search for an event or click a tag. |
+
+## Scene 6: Screen - event details
+
+| Tamil (say this) | English (subtitle) |
+|---|---|
+| Event page-இல் விலையும், எத்தனை seats மீதம் உள்ளன என்பதும் நேரடியாகத் தெரியும். | The event page shows the price and how many seats are left, live. |
+| ரவி ஒரு ticket தேர்வு செய்து, Book now அழுத்துகிறார். | Ravi chooses one ticket and presses Book now. |
+
+## Scene 7: Screen - checkout hold
+
+| Tamil (say this) | English (subtitle) |
+|---|---|
+| அவர் பணம் செலுத்தும் வரை, அந்த seat பத்து நிமிடங்கள் அவருக்காக வைக்கப்படுகிறது. | While he pays, the seat is kept for him for ten minutes. |
+| நூறு பேர் ஒரே நேரத்தில் book செய்தாலும், இருக்கும் seats-ஐ விட அதிகமாக விற்கப்படாது. Optimistic locking இதை உறுதி செய்கிறது. | Even if a hundred people book at the same moment, no extra seats are sold. Optimistic locking guarantees this. |
+
+## Scene 8: Screen - test payment
+
+| Tamil (say this) | English (subtitle) |
+|---|---|
+| Development-இல் இது ஒரு test payment page. உண்மையான பணம் இல்லை. | In development this is a test payment page. No real money is used. |
+| Stripe key கொடுத்தால், Stripe-இன் உண்மையான checkout page வரும். | With a Stripe key, Stripe's real checkout page appears instead. |
+
+## Scene 9: Screen - qr ticket
+
+| Tamil (say this) | English (subtitle) |
+|---|---|
+| பணம் செலுத்திய பிறகு, ரவிக்கு ஒரு QR ticket கிடைக்கிறது. ஒரு email-உம் வருகிறது. | After paying, Ravi gets a QR ticket. An email arrives too. |
+| QR code-இல் ஒரு random ticket code மட்டுமே உள்ளது. தனிப்பட்ட தகவல் எதுவும் இல்லை. | The QR code contains only a random ticket code. No private information. |
+
+## Scene 10: Screen - gate let in
+
+| Tamil (say this) | English (subtitle) |
+|---|---|
+| Event நாளில், volunteer பிரியா gate-இல் அந்த ticket-ஐ scan செய்கிறார். | On the event day, volunteer Priya scans the ticket at the gate. |
+| முதல் scan: பச்சை நிறத்தில் LET IN. | First scan: a green LET IN. |
+
+## Scene 11: Screen - gate already used
+
+| Tamil (say this) | English (subtitle) |
+|---|---|
+| அதே ticket-ஐ மீண்டும் scan செய்தால், சிவப்பு நிறத்தில் ALREADY USED என்று வரும். எப்போது, யார் scan செய்தார்கள் என்றும் காட்டும். | Scanned again, the same ticket shows a red ALREADY USED, with when and by whom. |
+| இது ஒரே ஒரு SQL UPDATE மூலம் நடக்கிறது. இருபது gates ஒரே நேரத்தில் scan செய்தாலும், ஒருவர் மட்டுமே உள்ளே செல்ல முடியும். | This works with a single SQL UPDATE. Even if twenty gates scan at once, only one entry is allowed. |
+
+## Scene 12: Screen - certificate
+
+| Tamil (say this) | English (subtitle) |
+|---|---|
+| Event முடிந்ததும், உண்மையில் வந்தவர்களுக்கு மட்டுமே PDF certificate கிடைக்கும். | When the event is over, only people who really came get a PDF certificate. |
+
+## Scene 13: Screen - verify public
+
+| Tamil (say this) | English (subtitle) |
+|---|---|
+| எந்த company-யும், certificate number-ஐ இந்த page-இல் type செய்து, அது உண்மையானதா என்று சரிபார்க்கலாம். | Any company can type the certificate number on this page and check that it is genuine. |
+
+## Scene 14: Screen - create event
+
+| Tamil (say this) | English (subtitle) |
+|---|---|
+| இப்போது organizer மாதவன், Coding Club-க்காக ஒரு புதிய event உருவாக்குகிறார். | Now organizer Madhavan creates a new event for the Coding Club. |
+| Browser-உம் server-உம் ஒவ்வொரு field-ஐயும் சரிபார்க்கின்றன. | Both the browser and the server check every field. |
+
+## Scene 15: Screen - approval queue
+
+| Tamil (say this) | English (subtitle) |
+|---|---|
+| Admin approve செய்த பிறகுதான், students-க்கு அந்த event தெரியும். ஒவ்வொரு மாற்றமும் audit log-இல் பதிவாகிறது. | Students see the event only after the admin approves it. Every change is recorded in the audit log. |
+
+## Scene 16: Screen - organizer analytics
+
+| Tamil (say this) | English (subtitle) |
+|---|---|
+| Organizer-க்கு ஒரு analytics dashboard உள்ளது: ஒவ்வொரு நாளும் விற்ற tickets, பணம், check-in விகிதம், rating. | Organizers have an analytics dashboard: tickets and money per day, check-in rate and rating. |
+| எண்ணிக்கையை database கணக்கிடுகிறது. அந்தப் பதில் அறுபது வினாடிகள் cache-இல் வைக்கப்படுகிறது. | The database does the counting, and the answer is cached for sixty seconds. |
+
+## Scene 17: Screen - security blocked
+
+| Tamil (say this) | English (subtitle) |
+|---|---|
+| வேறு club-இன் organizer கவியா, admin page-ஐத் திறக்க முயன்றால், அனுமதி மறுக்கப்படுகிறது. | When Kavya, an organizer of another club, tries to open the admin page, she is refused. |
+| Passwords, BCrypt மூலம் பாதுகாக்கப்படுகின்றன. Login token ஒரு httpOnly cookie-இல் வைக்கப்படுகிறது. | Passwords are protected with BCrypt, and the login token is kept in an httpOnly cookie. |
+
+## Scene 18: Slide 17 - Testing
+
+| Tamil (say this) | English (subtitle) |
+|---|---|
+| இந்த project-இல் நூற்று நாற்பத்தாறு automated tests உள்ளன. Service code coverage, தொண்ணூற்று ஒன்று சதவீதம். | The project has 146 automated tests. Service code coverage is 91 percent. |
+| ஒவ்வொரு push-இலும், GitHub Actions எல்லா tests-ஐயும் ஓட்டுகிறது. | GitHub Actions runs all the tests on every push. |
+
+## Scene 19: Slide 21 - Conclusion
+
+| Tamil (say this) | English (subtitle) |
+|---|---|
+| சுருக்கமாக, EventHub ஒரு முழுமையான, பாதுகாப்பான, நன்கு test செய்யப்பட்ட full stack project. | In short, EventHub is a complete, secure and well-tested full stack project. |
+| அடுத்த கட்டம், இதை internet-இல் deploy செய்வது. நன்றி! | The next step is to deploy it on the internet. Thank you! |

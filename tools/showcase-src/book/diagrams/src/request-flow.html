@@ -1,0 +1,27 @@
+<!doctype html><meta charset="utf-8"><style>*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Calibri,Arial,sans-serif;background:#fff;color:#1f2937;padding:28px;width:1400px}
+.row{display:flex;align-items:center;gap:18px}
+.col{display:flex;flex-direction:column;gap:14px}
+.b{border:2px solid #4f46e5;background:#eef2ff;border-radius:12px;padding:14px 18px;text-align:center}
+.b b{display:block;font-size:22px;color:#1e1b4b}
+.b span{font-size:16px;color:#374151}
+.dark{background:#1e1b4b;border-color:#1e1b4b}.dark b,.dark span{color:#fff}
+.amber{background:#fef3c7;border-color:#f59e0b}
+.green{background:#dcfce7;border-color:#15803d}
+.red{background:#fee2e2;border-color:#b91c1c}
+.gray{background:#f3f4f6;border-color:#9ca3af}
+.arrow{font-size:34px;color:#6b7280;line-height:1}
+.lbl{font-size:16px;color:#4b5563;text-align:center}
+.frame{border:3px dashed #1e1b4b;border-radius:16px;padding:18px}
+.frame>h3{font-size:20px;color:#1e1b4b;text-align:center;margin-bottom:12px}
+h2{font-size:26px;color:#1e1b4b;margin-bottom:18px}
+</style><body><h2>The journey of one request: Ravi presses "Book now"</h2>
+<div class="col" style="gap:10px">
+<div class="row"><div class="b" style="width:340px"><b>1. React page</b><span>api.post('/bookings', {eventId, quantity})</span></div><div class="arrow">&#10140;</div><div class="lbl" style="width:900px;text-align:left">Axios sends the login cookie (JWT) automatically and copies the XSRF-TOKEN cookie into the X-XSRF-TOKEN header.</div></div>
+<div class="row"><div class="b amber" style="width:340px"><b>2. Security filters</b><span>JwtCookieFilter + CSRF check</span></div><div class="arrow">&#10140;</div><div class="lbl" style="width:900px;text-align:left">JWT signature and expiry checked: the user is "logged in" for this one request. Wrong CSRF token: 403. No login: 401.</div></div>
+<div class="row"><div class="b" style="width:340px"><b>3. BookingController</b><span>@Valid BookingRequest</span></div><div class="arrow">&#10140;</div><div class="lbl" style="width:900px;text-align:left">JSON becomes a Java record; quantity must be 1-10, otherwise 400 with a clear message per field (GlobalExceptionHandler).</div></div>
+<div class="row"><div class="b" style="width:340px"><b>4. BookingService.hold</b><span>Retry.onConflict + TransactionTemplate</span></div><div class="arrow">&#10140;</div><div class="lbl" style="width:900px;text-align:left">Rules: event published and in the future, enough seats, no second active booking. Seats are taken from events.available_seats (version checked).</div></div>
+<div class="row"><div class="b" style="width:340px"><b>5. Repositories</b><span>EventRepository · BookingRepository</span></div><div class="arrow">&#10140;</div><div class="lbl" style="width:900px;text-align:left">UPDATE events SET available_seats = 9, version = 8 WHERE id = 2 AND version = 7, then INSERT INTO bookings (status HELD, hold 10 minutes).</div></div>
+<div class="row"><div class="b dark" style="width:340px"><b>6. MySQL</b><span>commit</span></div><div class="arrow">&#10140;</div><div class="lbl" style="width:900px;text-align:left">Both changes are saved together or not at all (one transaction). If another student changed the event first, the version does not match: retry with fresh data.</div></div>
+<div class="row"><div class="b green" style="width:340px"><b>7. Response 201 Created</b><span>BookingResponse JSON</span></div><div class="arrow">&#10140;</div><div class="lbl" style="width:900px;text-align:left">The React app opens /checkout/{id} and shows the 10-minute timer from secondsLeft, which the server calculated.</div></div>
+</div></body>
