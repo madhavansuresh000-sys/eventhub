@@ -135,7 +135,7 @@ The coverage report is written to `backend/target/site/jacoco/index.html`. GitHu
 | 6 Bookings & payments | ✅ | Seat holds, optimistic locking, Stripe or test page, idempotent webhooks |
 | 7 Signature features | ✅ | Waitlist, notifications, QR gate, certificates, feedback, analytics |
 | 8 Testing & polish | ✅ | Testcontainers, Mockito, React tests, 91% coverage, security and accessibility fixes |
-| 9 Launch | 🚧 | Deployment next |
+| 9 Launch | ✅ | Deployment-ready: Dockerfile, render.yaml (Render + Aiven MySQL), vercel.json; the production image was tested locally on an empty database. Not hosted online, because this is a practice project |
 
 ## Known limitations (practice project)
 - **Volunteers page** (organizer area): it still shows sample names. Real volunteers already exist as club members with the VOLUNTEER role, and they can use the gate scanner. A page to add or remove them was left out on purpose.
